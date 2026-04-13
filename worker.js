@@ -1,15 +1,15 @@
-const scriptConfig = {
-  ROOT_DOMAIN: "", // Kosongkan untuk deteksi otomatis
-  SERVICE_NAME: "joss",
-  API_KEY: "fa084f134063e11cd26e93fbbe7e1f468dc91",
-  API_EMAIL: "desalekong24@gmail.com",
-  ACCOUNT_ID: "fbfeda4c47ab2397865928d1766f6415",
-  ZONE_ID: "91920c3ea37495f5de7e15d31be40038",
-  OWNER_PASSWORD: "7",
-  CLOUDFLARE_API_TOKEN: "cfut_rgk438WvED6dFNx5hDdnD3RW385qstaodOjvAswg92fb1149",
-};
-
 import { connect } from "cloudflare:sockets";
+
+ const scriptConfig = {
+  ROOT_DOMAIN: "jak.biz.id",
+  SERVICE_NAME: "joss",
+  API_KEY: "6666666666666666",
+  API_EMAIL: "desalekong24@gmail.com",
+  ACCOUNT_ID: "86d6cc28a5ace424ff25e9b7ee8f6e4f",
+  ZONE_ID: "d9b9037c010bcf8f205cbbfe074dfcac",
+  OWNER_PASSWORD: "7",
+  CLOUDFLARE_API_TOKEN: "4bf6e0db532e7f8998a5b259199c29b6",
+};
 
 const proxyListURL = 'https://raw.githubusercontent.com/paoandest/botak/refs/heads/main/cek/proxyList.txt';
 const namaWeb = 'GEO PROJECT'
@@ -77,12 +77,12 @@ const GALAXY_ANIMATION_COMPONENT = `
       cursor: pointer;
       z-index: 200;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
-      background: linear-gradient(135deg, #4f00ff 0%, #8000ff 100%);
-      box-shadow: 0 4px 15px rgba(79, 0, 255, 0.4);
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      box-shadow: 0 4px 15px rgba(42, 82, 152, 0.4);
     }
     .control-button:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(79, 0, 255, 0.6);
+      box-shadow: 0 6px 20px rgba(42, 82, 152, 0.6);
     }
     .control-button svg {
       width: 28px;
@@ -292,8 +292,13 @@ const GALAXY_ANIMATION_COMPONENT = `
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body.blur-background .webgl {
+      filter: blur(4px);
+    }
+  </style>
 </head>
-<body>
+<body class="blur-background">
   <canvas class="webgl"></canvas>
 
   <!-- Floating control button -->
@@ -318,16 +323,16 @@ const GALAXY_ANIMATION_COMPONENT = `
       <div class="control-group">
         <label for="insideColor">Inside Color</label>
         <div class="color-input">
-          <input type="color" id="insideColor" value="#ff00ff">
-          <input type="text" id="insideColorText" value="#ff00ff">
+          <input type="color" id="insideColor" value="#ff6030">
+          <input type="text" id="insideColorText" value="#ff6030">
         </div>
       </div>
       
       <div class="control-group">
         <label for="outsideColor">Outside Color</label>
         <div class="color-input">
-          <input type="color" id="outsideColor" value="#00ffff">
-          <input type="text" id="outsideColorText" value="#00ffff">
+          <input type="color" id="outsideColor" value="#0949f0">
+          <input type="text" id="outsideColorText" value="#0949f0">
         </div>
       </div>
     </div>
@@ -462,8 +467,8 @@ const GALAXY_ANIMATION_COMPONENT = `
       spin: 3,
       randomness: 5,
       randomnessPower: 4,
-      insideColor: '#ff00ff',
-      outsideColor: '#00ffff',
+      insideColor: '#ff6030',
+      outsideColor: '#0949f0',
       autoRotate: true,
       orbitControls: false
     };
@@ -957,7 +962,7 @@ const SIDEBAR_COMPONENT = `
         }
 
         .logo-text {
-            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            background: linear-gradient(90deg, #60a5fa, #3b82f6, #8b5cf6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -967,13 +972,13 @@ const SIDEBAR_COMPONENT = `
 
         @keyframes shimmer {
             0% {
-                background-position: 200% center;
-            }
-            50% {
                 background-position: 0% center;
             }
+            50% {
+                background-position: 100% center;
+            }
             100% {
-                background-position: 200% center;
+                background-position: 0% center;
             }
         }
 
@@ -1396,7 +1401,7 @@ export default {
 
     const proxyIP = `${selectedProxy.proxyIP}:${selectedProxy.proxyPort}`;
     console.log(`Selected ALL Proxy: ${proxyIP}`);
-    return await websockerHandler(request, proxyIP, ctx);
+    return await websockerHandler(request, proxyIP);
   }
 
   const countryMatch = url.pathname.match(/^\/Free-VPN-CF-Geo-Project\/([A-Z]{2})(\d*)$/);
@@ -1422,7 +1427,7 @@ export default {
 
     const proxyIP = `${selectedProxy.proxyIP}:${selectedProxy.proxyPort}`;
     console.log(`Selected Proxy: ${proxyIP} for ${baseCountryCode}${indexStr}`);
-    return await websockerHandler(request, proxyIP, ctx);
+    return await websockerHandler(request, proxyIP);
   }
 
   // Handle direct IP:PORT proxy requests
@@ -1430,25 +1435,18 @@ export default {
   if (ipPortMatch) {
     const proxyIP = `${ipPortMatch[1]}:${ipPortMatch[2]}`;
     console.log(`Direct Proxy IP: ${proxyIP}`);
-    return await websockerHandler(request, proxyIP, ctx);
+    return await websockerHandler(request, proxyIP);
   }
 }
 
-      const rootDomain = scriptConfig.ROOT_DOMAIN || url.hostname;
+      const rootDomain = scriptConfig.ROOT_DOMAIN;
       const serviceName = scriptConfig.SERVICE_NAME;
       const type = url.searchParams.get('type') || 'mix';
       const tls = url.searchParams.get('tls') !== 'false';
       const wildcard = url.searchParams.get('wildcard') === 'true';
       const bug = url.searchParams.get('bug');
-
-      let bugs, geo81;
-      if (url.hostname.endsWith('.workers.dev')) {
-          bugs = bug || url.hostname;
-          geo81 = url.hostname;
-      } else {
-          bugs = wildcard ? (bug || rootDomain) : (bug || `${serviceName}.${rootDomain}`);
-          geo81 = wildcard ? `${bug || rootDomain}.${serviceName}.${rootDomain}` : `${serviceName}.${rootDomain}`;
-      }
+      const bugs = wildcard ? (bug || rootDomain) : (bug || `${serviceName}.${rootDomain}`);
+      const geo81 = wildcard ? `${bug || rootDomain}.${serviceName}.${rootDomain}` : `${serviceName}.${rootDomain}`;
       const country = url.searchParams.get('country');
       const limit = parseInt(url.searchParams.get('limit'), 10); // Ambil nilai limit
       let configs;
@@ -3530,7 +3528,7 @@ async function handleSubRequest(hostnem) {
         }
 
         body {
-            background: linear-gradient(135deg, #1e0034 0%, #290029 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             color: var(--text-primary);
             font-family: 'Rajdhani', sans-serif;
             min-height: 100vh;
@@ -4148,7 +4146,7 @@ function buildCountryFlag() {
     };
 
     const url = new URL(request.url);
-    const rootDomain = scriptConfig.ROOT_DOMAIN || (url.hostname.endsWith('.workers.dev') ? url.hostname : url.hostname.replace(/^[^.]+\./, ''));
+    const rootDomain = scriptConfig.ROOT_DOMAIN || url.hostname.replace(/^[^.]+\./, '');
     const serviceName = scriptConfig.SERVICE_NAME;
     const hostName = rootDomain;
     const page = parseInt(url.searchParams.get('page')) || 1;
@@ -4188,21 +4186,29 @@ function buildCountryFlag() {
 
     const configType = url.searchParams.get('configType') || 'tls';
 
-    let cardsHTML = '';
+    let tableHTML = `
+    <div class="overflow-x-auto relative shadow-lg rounded-lg mt-6 bg-gray-800 bg-opacity-40 border border-gray-700">
+    <table class="w-full text-sm text-left text-gray-400">
+        <thead class="text-xs text-gray-400 uppercase bg-gray-700 bg-opacity-50">
+            <tr>
+                <th scope="col" class="py-3 px-6 text-center">No.</th>
+                <th scope="col" class="py-3 px-6 text-center">IP PORT</th>
+                <th scope="col" class="py-3 px-6 text-center">Status</th>
+                <th scope="col" class="py-3 px-6 text-center">Country</th>
+                <th scope="col" class="py-3 px-6 text-center">ISP</th>
+                <th scope="col" class="py-3 px-6 text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+    `;
 
     visibleConfigs.forEach((config, index) => {
         const rowNumber = startIndex + index + 1;
         const uuid = generateUUIDv4();
-        let vpnAddress, vpnHost;
-        if (url.hostname.endsWith('.workers.dev')) {
-            vpnAddress = selectedWildcard ? selectedWildcard : url.hostname;
-            vpnHost = url.hostname;
-        } else {
-            vpnAddress = selectedWildcard ? selectedWildcard : (scriptConfig.ROOT_DOMAIN ? `${serviceName}.${hostName}` : url.hostname);
-            vpnHost = scriptConfig.ROOT_DOMAIN ? (selectedWildcard ? `${selectedWildcard}.${serviceName}.${hostName}` : `${serviceName}.${hostName}`) : url.hostname;
-        }
-        const BASE_URL = `https://${url.hostname}`;
-        const CHECK_API = `${BASE_URL}/geo-ip?ip=`;
+        const wildcard = selectedWildcard ? selectedWildcard : `${serviceName}.${hostName}`;
+        const modifiedHostName = selectedWildcard ? `${selectedWildcard}.${serviceName}.${hostName}` : `${serviceName}.${hostName}`;
+        const url = new URL(request.url);
         const ipPort = `${config.ip}:${config.port}`;
         const path2 = encodeURIComponent(`/${config.ip}=${config.port}`);
         const subP = `/Free-VPN-CF-Geo-Project`;
@@ -4211,19 +4217,19 @@ function buildCountryFlag() {
         const encodedFragment = encodeURIComponent(fragment);
 
         // Define config links
-        const vlessTLSSimple = `vless://${uuid}@${vpnAddress}:443?encryption=none&security=tls&sni=${vpnHost}&fp=randomized&type=ws&host=${vpnHost}&path=${encodeURIComponent(subP + config.path.toUpperCase())}#${encodedFragment}`;
-        const vlessTLSRibet = `vless://${uuid}@${vpnAddress}:443?encryption=none&security=tls&sni=${vpnHost}&fp=randomized&type=ws&host=${vpnHost}&path=${subP}${path2}#${encodedFragment}`;
-        const trojanTLSSimple = `trojan://${uuid}@${vpnAddress}:443?encryption=none&security=tls&sni=${vpnHost}&fp=randomized&type=ws&host=${vpnHost}&path=${encodeURIComponent(subP + config.path.toUpperCase())}#${encodedFragment}`;
-        const trojanTLSRibet = `trojan://${uuid}@${vpnAddress}:443?encryption=none&security=tls&sni=${vpnHost}&fp=randomized&type=ws&host=${vpnHost}&path=${subP}${path2}#${encodedFragment}`;
-        const ssTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${vpnAddress}:443?encryption=none&type=ws&host=${vpnHost}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=tls&sni=${vpnHost}#${encodedFragment}`;
-        const ssTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${vpnAddress}:443?encryption=none&type=ws&host=${vpnHost}&path=${subP}${path2}&security=tls&sni=${vpnHost}#${encodedFragment}`;
+        const vlessTLSSimple = `vless://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}#${encodedFragment}`;
+        const vlessTLSRibet = `vless://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${subP}${path2}#${encodedFragment}`;
+        const trojanTLSSimple = `trojan://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}#${encodedFragment}`;
+        const trojanTLSRibet = `trojan://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${subP}${path2}#${encodedFragment}`;
+        const ssTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
+        const ssTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${subP}${path2}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
         
-        const vlessNTLSSimple = `vless://${uuid}@${vpnAddress}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${vpnHost}&fp=randomized&type=ws&sni=${vpnHost}#${encodedFragment}`;
-        const vlessNTLSRibet = `vless://${uuid}@${vpnAddress}:80?path=${subP}${path2}&security=none&encryption=none&host=${vpnHost}&fp=randomized&type=ws&sni=${vpnHost}#${encodedFragment}`;
-        const trojanNTLSSimple = `trojan://${uuid}@${vpnAddress}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${vpnHost}&fp=randomized&type=ws&sni=${vpnHost}#${encodedFragment}`;
-        const trojanNTLSRibet = `trojan://${uuid}@${vpnAddress}:80?path=${subP}${path2}&security=none&encryption=none&host=${vpnHost}&fp=randomized&type=ws&sni=${vpnHost}#${encodedFragment}`;
-        const ssNTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${vpnAddress}:80?encryption=none&type=ws&host=${vpnHost}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&sni=${vpnHost}#${encodedFragment}`;
-        const ssNTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${vpnAddress}:80?encryption=none&type=ws&host=${vpnHost}&path=${subP}${path2}&security=none&sni=${vpnHost}#${encodedFragment}`;
+        const vlessNTLSSimple = `vless://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
+        const vlessNTLSRibet = `vless://${uuid}@${wildcard}:80?path=${subP}${path2}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
+        const trojanNTLSSimple = `trojan://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
+        const trojanNTLSRibet = `trojan://${uuid}@${wildcard}:80?path=${subP}${path2}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
+        const ssNTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:80?encryption=none&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&sni=${modifiedHostName}#${encodedFragment}`;
+        const ssNTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:80?encryption=none&type=ws&host=${modifiedHostName}&path=${subP}${path2}&security=none&sni=${modifiedHostName}#${encodedFragment}`;
 
         let vlessSimple, vlessRibet, trojanSimple, trojanRibet, ssSimple, ssRibet;
         if (configType === 'tls') {
@@ -4242,72 +4248,43 @@ function buildCountryFlag() {
             ssRibet = ssNTLSRibet;
         }
 
-        const cardBackgrounds = [
-     'https://www.transparenttextures.com/patterns/carbon-fibre.png'
-];
-        const backgroundUrl = cardBackgrounds[index % cardBackgrounds.length];
-
-        cardsHTML += `
-<div class="card slide-up proxy-card lozad scale-95 bg-purple-900/30 dark:bg-slate-800 transition-all duration-300 rounded-lg p-6 flex flex-col shadow-lg border border-white/20 hover:scale-105 backdrop-blur-md" 
-     data-ip-port="${ipPort}" 
-     style="background-image: url('${backgroundUrl}');">
-    
-    <!-- Header Section -->
-    <div class="flex justify-between items-center">
-        <div class="status-container">
-            <div class="proxy-status">
-                <div class="loading-container">
-                    <div class="spinner"></div>
-                    <span>Checking status...</span>
+        tableHTML += `
+            <tr class="border-b border-gray-700 hover:bg-gray-600 bg-opacity-20 hover:bg-opacity-40 proxy-row" data-ip-port="${ipPort}">
+            <td class="py-4 px-6">${rowNumber}.</td>
+            <td class="py-4 px-6">${config.ip}:${config.port}</td>
+            <td class="py-4 px-6 proxy-status status-delay-cell"><div class="loading-container"><div class="spinner"></div></div></td>
+            <td class="py-4 px-6">
+                <div class="flex items-center">
+                    <img width="20" src="https://hatscripts.github.io/circle-flags/flags/${config.countryCode.toLowerCase()}.svg" alt="${config.countryCode} flag" class="mr-2"/>
+                    ${config.countryCode}
                 </div>
-            </div>
-            <div class="delay-badge"></div>
-        </div>
-        <div class="rounded-full overflow-hidden border-4 border-white dark:border-slate-800">
-            <img width="40" 
-                 src="https://hatscripts.github.io/circle-flags/flags/${config.countryCode.toLowerCase()}.svg" 
-                 alt="${config.countryCode} flag" />
-        </div>
-    </div>
-
-    <!-- Info Section -->
-    <div class="rounded-lg py-4 px-4 bg-purple-800/20 dark:bg-slate-700/50 flex-grow mt-4">
-        <h5 class="font-bold text-lg text-white mb-2 overflow-x-scroll scrollbar-hide text-nowrap">
-    ${config.isp}
-</h5>
-        <div class="flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-300 dark:text-white bg-black/50 dark:bg-slate-600/50 px-3 py-1.5 rounded-lg border border-slate-700/50 dark:border-slate-600/50">
-                ${config.ip}:${config.port}
-            </span>
-            <span class="text-sm font-bold text-white bg-pink-500 dark:bg-pink-600 dark:text-black px-3 py-1.5 rounded-lg shadow-sm">
-                ${config.countryCode}
-            </span>
-        </div>
-    </div>
-
-    <!-- Protocol Buttons -->
-    <div class="grid grid-cols-2 gap-2 mt-4 text-sm">
-        <button class="bg-gradient-to-r from-pink-500 to-purple-600 dark:from-pink-600 dark:to-purple-800 rounded-md p-1.5 w-full text-white font-semibold transition-colors duration-200 text-xs"
-                onclick='showOptions("VLess", "${vlessRibet.replace(/"/g, '&quot;')}", "${vlessSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-            VLESS
-        </button>
-        <button class="bg-gradient-to-r from-pink-500 to-purple-600 dark:from-pink-600 dark:to-purple-800 rounded-md p-1.5 w-full text-white font-semibold transition-colors duration-200 text-xs"
-                onclick='showOptions("Trojan", "${trojanRibet.replace(/"/g, '&quot;')}", "${trojanSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-            TROJAN
-        </button>
-    </div>
-
-    <!-- Additional Protocol Button -->
-    <div class="button-row mt-2">
-        <button class="bg-gradient-to-r from-pink-500 to-purple-600 dark:from-pink-600 dark:to-purple-800 rounded-md p-1.5 w-full text-white font-semibold transition-colors duration-200 text-xs"
-                onclick='showOptions("SS", "${ssRibet.replace(/"/g, '&quot;')}", "${ssSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-            SHADOWSOCKS
-        </button>
-    </div>
-</div>
-`;
-
+            </td>
+            <td class="py-4 px-6">${config.isp}</td>
+            <td class="py-4 px-6 text-center">
+                <div class="flex justify-center space-x-2">
+                    <button class="bg-blue-600 hover:bg-blue-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
+                            onclick='showOptions("VLess", "${vlessRibet.replace(/"/g, '&quot;')}", "${vlessSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                        VLESS
+                    </button>
+                    <button class="bg-purple-600 hover:bg-purple-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
+                            onclick='showOptions("Trojan", "${trojanRibet.replace(/"/g, '&quot;')}", "${trojanSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                        TROJAN
+                    </button>
+                    <button class="bg-green-600 hover:bg-green-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
+                            onclick='showOptions("SS", "${ssRibet.replace(/"/g, '&quot;')}", "${ssSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                        SHADOWSOCKS
+                    </button>
+                </div>
+            </td>
+        </tr>
+        `;
     });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    </div>
+    `;
 
     const showOptionsScript = `
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -4463,6 +4440,58 @@ function buildCountryFlag() {
     100% { transform: rotate(360deg); }
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fireLine {
+    0% { 
+        left: -100%;
+        opacity: 0;
+    }
+    50% { 
+        opacity: 1;
+    }
+    100% { 
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(52, 152, 219, 0.6);
+    }
+}
+
+@keyframes fireCollision {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0); opacity: 1; }
+    51% { opacity: 0.5; }
+    52% { opacity: 1; }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes meteorShower {
+    0% { transform: translateY(-100%) rotate(0deg); }
+    100% { transform: translateY(100%) rotate(360deg); }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -4492,7 +4521,7 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(rgba(3, 6, 23, 0.98), rgba(6, 12, 30, 0.98)),
-                url('https://img.wattpad.com/63b4fef6d4a8b5eef3a12394990aea164cfe4be1/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f776174747061642d6d656469612d736572766963652f53746f7279496d616765L434916e4f5962596f476f5241773d3d2d3132302e313563323538386461323838623263313733313931313130373332332e6a7067?s=fit&w=720&h=720') no-repeat center center fixed;
+                url('https://img.wattpad.com/63b4fef6d4a8b5eef3a12394990aea164cfe4be1/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f776174747061642d6d656469612d736572766963652f53746f7279496d616765L434916e4f5962596f476f5241773d3d2d3132302e313563323538386461323838623263313733313931313130373332322e6a7067?s=fit&w=720&h=720') no-repeat center center fixed;
     background-size: cover;
     display: flex;
     justify-content: center;
@@ -4609,106 +4638,48 @@ select:focus {
 .quantum-pagination {
     display: flex;
     justify-content: center;
-    gap: 0.8rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
-}
-
-.quantum-pagination a {
-    padding: 0.8rem 1.5rem;
-    background: rgba(0, 255, 136, 0.1);
-    color: var(--primary);
-    text-decoration: none;
-    border-radius: 12px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
-    transition: all 0.3s ease;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 600;
-    min-width: 45px;
-    text-align: center;
-}
-
-.quantum-pagination a:hover,
-.quantum-pagination a.active {
-    background: var(--primary);
-    color: var(--dark-bg);
-    transform: translateY(-2px);
-}
-
-.quantum-pagination {
     gap: 0.5rem;
+    margin-top: 2rem;
     flex-wrap: wrap;
 }
 
 .quantum-pagination a {
     padding: 0.5rem 0.7rem;
-    font-size: 0.7rem;
-    min-width: 30px;
-}
-
-.pagination-number.active {
-    background: var(--neon-magenta);
-    color: white !important;
-    border-color: var(--neon-magenta);
-}
-
-.quantum-pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.8rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
-}
-
-.quantum-pagination a {
-    padding: 0.8rem 1.5rem;
-    background: #10b981; /* Hijau */
+    background: #10b981;
     color: white;
     text-decoration: none;
     border-radius: 12px;
-    border: 1px solid #059669; /* Hijau lebih tua untuk border */
+    border: 1px solid #059669;
     transition: all 0.3s ease;
     font-family: 'Rajdhani', sans-serif;
-    font-weight: 800; /* Lebih tebal */
-    min-width: 45px;
+    font-weight: 800;
+    min-width: 30px;
     text-align: center;
-    font-weight: bold; /* Tambahan untuk ketebalan ekstra */
+    font-size: 0.7rem;
 }
 
 .quantum-pagination a:hover {
-    background: #059669; /* Hijau lebih tua saat hover */
+    background: #059669;
     color: white;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-weight: 900; /* Lebih tebal saat hover */
+    font-weight: 900;
 }
 
 .quantum-pagination a.active {
-    background: #f59e0b; /* Kuning emas */
+    background: #f59e0b;
     color: white !important;
-    border-color: #d97706; /* Kuning emas lebih tua */
+    border-color: #d97706;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-    font-weight: 900; /* Paling tebal untuk active */
+    font-weight: 900;
 }
 
-.quantum-pagination {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.quantum-pagination a {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.7rem;
-    min-width: 30px;
-}
-
-/* Jika Anda masih menggunakan class pagination-number */
 .pagination-number.active {
-    background: #f59e0b; /* Kuning emas */
+    background: #f59e0b;
     color: white !important;
-    border-color: #d97706; /* Kuning emas lebih tua */
-    font-weight: 900; /* Juga tebal untuk class active */
+    border-color: #d97706;
+    font-weight: 900;
 }
 
 .neon-active {
@@ -4718,7 +4689,7 @@ select:focus {
         0 0 10px #00FF00,
         0 0 15px #00FF00,
         0 0 20px #00FF00;
-    animation: neonBlink 2s infinite;
+    animation: discoLights 0.8s infinite;
 }
 
 .neon-dead {
@@ -4727,7 +4698,7 @@ select:focus {
         0 0 5px #FF3333,
         0 0 10px #FF3333,
         0 0 15px #FF3333;
-    animation: deadPulse 1.5s infinite;
+    animation: discoLights 0.6s infinite;
 }
 
 .status-container {
@@ -4744,16 +4715,100 @@ select:focus {
     border: 1px solid #e2e8f0;
     backdrop-filter: blur(5px);
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-}
-
-.dark .status-container {
-    background: var(--card-bg-dark);
-    color: #f7fafc;
-    border: 1px solid #4a5568;
+    animation: backgroundDisco 3s infinite;
 }
 
 .status-container * {
     color: inherit;
+}
+
+@keyframes discoLights {
+    0% {
+        color: #00FF00;
+        text-shadow: 
+            0 0 5px #00FF00,
+            0 0 10px #00FF00,
+            0 0 15px #00FF00;
+    }
+    25% {
+        color: #FF00FF;
+        text-shadow: 
+            0 0 5px #FF00FF,
+            0 0 10px #FF00FF,
+            0 0 15px #FF00FF;
+    }
+    50% {
+        color: #00FFFF;
+        text-shadow: 
+            0 0 5px #00FFFF,
+            0 0 10px #00FFFF,
+            0 0 15px #00FFFF;
+    }
+    75% {
+        color: #FFFF00;
+        text-shadow: 
+            0 0 5px #FFFF00,
+            0 0 10px #FFFF00,
+            0 0 15px #FFFF00;
+    }
+    100% {
+        color: #00FF00;
+        text-shadow: 
+            0 0 5px #00FF00,
+            0 0 10px #00FF00,
+            0 0 15px #00FF00;
+    }
+}
+
+@keyframes backgroundDisco {
+    0% {
+        background: rgba(255, 0, 255, 0.1);
+        border-color: #FF00FF;
+    }
+    25% {
+        background: rgba(0, 255, 255, 0.1);
+        border-color: #00FFFF;
+    }
+    50% {
+        background: rgba(255, 255, 0, 0.1);
+        border-color: #FFFF00;
+    }
+    75% {
+        background: rgba(0, 255, 0, 0.1);
+        border-color: #00FF00;
+    }
+    100% {
+        background: rgba(255, 0, 255, 0.1);
+        border-color: #FF00FF;
+    }
+}
+
+.neon-dead {
+    animation: deadDisco 0.5s infinite;
+}
+
+@keyframes deadDisco {
+    0% {
+        color: #FF3333;
+        text-shadow: 
+            0 0 5px #FF3333,
+            0 0 10px #FF3333,
+            0 0 15px #FF3333;
+    }
+    50% {
+        color: #FF6B6B;
+        text-shadow: 
+            0 0 5px #FF6B6B,
+            0 0 10px #FF6B6B,
+            0 0 15px #FF6B6B;
+    }
+    100% {
+        color: #FF3333;
+        text-shadow: 
+            0 0 5px #FF3333,
+            0 0 10px #FF3333,
+            0 0 15px #FF3333;
+    }
 }
 
 .status-badge {
@@ -4767,13 +4822,9 @@ select:focus {
 }
 
 .delay-badge {
-    background: linear-gradient(45deg, #FFD700, #FFA500);
-    color: #000;
-    padding: 4px 8px;
-    border-radius: 4px;
+    color: yellow;
     font-weight: bold;
     font-size: 12px;
-    box-shadow: 0 0 5px gold;
 }
 
 .loading-container {
@@ -4783,12 +4834,43 @@ select:focus {
 }
 
 .spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
+    width: 30px;
+    height: 30px;
+    border: 4px solid rgba(52, 152, 219, 0.2);
+    border-top: 4px solid #3498db;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 1s linear infinite;
+    animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite, 
+               pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
+    position: relative;
+}
+
+.spinner::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border: 2px solid transparent;
+    border-top: 2px solid #e74c3c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    opacity: 0.7;
+}
+
+.spinner::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border: 1px solid transparent;
+    border-top: 1px solid #2ecc71;
+    border-radius: 50%;
+    animation: spin 1.5s ease-in-out infinite;
+    opacity: 0.5;
 }
 
 .loading-icon {
@@ -4806,7 +4888,7 @@ select:focus {
     padding-top: 8px;
     margin-top: 8px;
     text-align: center;
-    font-size: 16vw;
+    font-size: 1.5rem;
     font-weight: 600;
     background: linear-gradient(145deg,
         #00ff88 0%,
@@ -4819,13 +4901,8 @@ select:focus {
     background-clip: text;
     background-size: 200% 200%;
     position: relative;
-}
-
-.quantum-title {
-    font-size: 1.5rem;
     margin-bottom: 0.8rem;
 }
-
 
 .quantum-toast {
     position: fixed;
@@ -4856,7 +4933,6 @@ select:focus {
     border-color: var(--glass-border-dark);
 }
 
-/* Garis Api Merah - Kiri ke Kanan */
 .card::before {
     content: '';
     position: absolute;
@@ -4870,7 +4946,6 @@ select:focus {
     z-index: 2;
 }
 
-/* Garis Api Biru - Kanan ke Kiri */
 .card::after {
     content: '';
     position: absolute;
@@ -4882,20 +4957,6 @@ select:focus {
     animation: fireLine 4s ease-in-out infinite reverse;
     filter: blur(1px);
     z-index: 2;
-}
-
-@keyframes fireLine {
-    0% { 
-        left: -100%;
-        opacity: 0;
-    }
-    50% { 
-        opacity: 1;
-    }
-    100% { 
-        left: 100%;
-        opacity: 0;
-    }
 }
 
 .card:hover {
@@ -4933,29 +4994,12 @@ select:focus {
     animation: slideUp 0.6s ease-out;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { 
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to { 
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 .content {
     flex: 1;
     padding: 40px;
     text-align: center;
 }
 
-/* Footer dengan Efek Meteor */
 .footer {
     text-align: center;
     margin-top: 60px;
@@ -4977,7 +5021,6 @@ select:focus {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-/* Footer Content */
 .footer-content {
     position: relative;
     z-index: 2;
@@ -5065,14 +5108,20 @@ select:focus {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.social-icon.github { background-color: #333; }
+.social-icon.whatsapp { background-color: #25D366; }
+.social-icon.telegram { background-color: #0088cc; }
+
 .social-icon:hover {
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
     color: white;
 }
 
-/* Copyright dengan efek api putih */
+.social-icon.github:hover { background-color: #444; }
+.social-icon.whatsapp:hover { background-color: #36e477; }
+.social-icon.telegram:hover { background-color: #1199dd; }
+
 .copyright-fire {
     position: relative;
     margin-top: 20px;
@@ -5114,15 +5163,6 @@ select:focus {
     animation-direction: reverse;
 }
 
-@keyframes fireCollision {
-    0% { transform: translateX(-100%); }
-    50% { transform: translateX(0); opacity: 1; }
-    51% { opacity: 0.5; }
-    52% { opacity: 1; }
-    100% { transform: translateX(100%); }
-}
-
-/* Efek Meteor untuk Footer */
 .footer::before {
     content: '';
     position: absolute;
@@ -5143,36 +5183,13 @@ select:focus {
         radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
 }
 
-@keyframes meteorShower {
-    0% { transform: translateY(-100%) rotate(0deg); }
-    100% { transform: translateY(100%) rotate(360deg); }
-}
-
 .footer p {
     color: var(--gray-light);
     margin-bottom: 15px;
 }
 
-/* Animasi Fade In */
 .fade-in {
     animation: fadeIn 1.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsif */
-@media (max-width: 768px) {
-    .footer-links {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .footer {
-        padding: 30px 20px;
-    }
 }
 
 .quantum-container {
@@ -5195,7 +5212,6 @@ select:focus {
     overflow: hidden;
 }
 
-/* Efek glass overlay */
 .quantum-container::before {
     content: '';
     position: absolute;
@@ -5223,6 +5239,32 @@ select:focus {
         inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.w-full.text-sm.text-left.text-gray-400 tbody td {
+    color: white;
+    font-weight: bold;
+}
+
+.delay-badge {
+    color: yellow;
+    background-color: transparent;
+    font-weight: bold;
+}
+
+.small-title {
+    font-size: 14px !important;
+}
+
+.small-text {
+    font-size: 12px !important;
+}
+
+.status-delay-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
 @media (min-width: 640px) {
     .quantum-container {
         max-width: 900px;
@@ -5243,15 +5285,20 @@ select:focus {
     .quantum-title {
         font-size: 2.5rem;
     }
+    .footer-links {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .footer {
+        padding: 30px 20px;
+    }
 }
 
 @media (min-width: 1024px) {
     .quantum-title {
         font-size: 3rem;
-        margin-bottom: 0.8rem;
     }
 }
-
 </style>
     </head>
    <body>
@@ -5289,11 +5336,7 @@ select:focus {
     style="border-width: 1px; border-style: solid; border-color: #28a745; height: 55px; border-radius: 10px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); overflow-x: auto; overflow-y: hidden;">
     ${buildCountryFlag()}
 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                    ${cardsHTML}
-                </div>
-                
+                ${tableHTML}
                 ${showOptionsScript}
                 
                 <script>
@@ -5313,12 +5356,11 @@ select:focus {
 
                 <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const cards = document.querySelectorAll('.proxy-card');
+                    const rows = document.querySelectorAll('.proxy-row');
                     const checkAllProxies = async () => {
-                        for (const card of cards) {
-                            const ipPort = card.dataset.ipPort;
-                            const statusElement = card.querySelector('.proxy-status');
-                            const delayElement = card.querySelector('.delay-badge');
+                        for (const row of rows) {
+                            const ipPort = row.dataset.ipPort;
+                            const statusElement = row.querySelector('.proxy-status');
                             const healthCheckUrl = \`/geo-ip?ip=\${ipPort}\`;
 
                             try {
@@ -5329,16 +5371,15 @@ select:focus {
                                 const status = data.status || 'UNKNOWN';
                                 let delay = parseFloat(data.delay) || NaN;
 
+                                let delayHTML = '';
                                 if (!isNaN(delay)) {
                                     delay = Math.round(delay);
-                                    delayElement.textContent = delay + ' ms';
-                                    delayElement.style.display = 'block';
+                                    delayHTML = \`<span class="delay-badge" style="font-size: 0.75rem;">(\${delay}ms)</span>\`;
                                 } else {
-                                    delayElement.textContent = 'N/A';
+                                    delayHTML = '<span class="delay-badge" style="font-size: 0.75rem;">(N/A)</span>';
                                 }
 
                                 let statusHTML = '';
-                                let delayText = delayElement.textContent;
                                 
                                 switch (status) {
                                     case 'ACTIVE':
@@ -5356,7 +5397,7 @@ select:focus {
                                                 <span>DEAD</span>
                                             </div>
                                         \`;
-                                        delayText = '∞ ms';
+                                        delayHTML = '<span class="delay-badge">(∞ ms)</span>';
                                         break;
                                     default:
                                         statusHTML = \`
@@ -5367,8 +5408,7 @@ select:focus {
                                         \`;
                                 }
                                 
-                                statusElement.innerHTML = statusHTML;
-                                delayElement.textContent = delayText;
+                                statusElement.innerHTML = statusHTML + delayHTML;
 
                             } catch (error) {
                                 console.error('Health check error for \${ipPort}:', error);
@@ -5377,15 +5417,22 @@ select:focus {
                                         <i class="fas fa-exclamation-triangle"></i>
                                         <span>ERROR</span>
                                     </div>
+                                    <span class="delay-badge">(! ms)</span>
                                 \`;
-                                delayElement.textContent = '! ms';
                             }
                             await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between checks
                         }
                     };
 
                     checkAllProxies();
-                    setInterval(checkAllProxies, 500); // Re-check all every 60 seconds
+                    
+                    const statusHeader = document.querySelector('thead tr th:nth-child(6)'); // Kolom "STATUS"
+                    if(statusHeader) {
+                        statusHeader.style.cursor = 'pointer';
+                        statusHeader.addEventListener('click', () => {
+                            checkAllProxies();
+                        });
+                    }
                 });
                 </script>
 
@@ -5403,17 +5450,14 @@ select:focus {
       <footer>
     <div class="content">
         <div class="social-icons">
-            <a href="#" class="social-icon">
-                <i class="fab fa-facebook-f"></i>
+            <a href="https://github.com/jaka1m" class="social-icon github">
+                <i class="fab fa-github"></i>
             </a>
-            <a href="#" class="social-icon">
-                <i class="fab fa-twitter"></i>
+            <a href="https://wa.me/6282276031731" class="social-icon whatsapp">
+                <i class="fab fa-whatsapp"></i>
             </a>
-            <a href="#" class="social-icon">
-                <i class="fab fa-instagram"></i>
-            </a>
-            <a href="#" class="social-icon">
-                <i class="fab fa-linkedin-in"></i>
+            <a href="https://t.me/sampiiiiu" class="social-icon telegram">
+                <i class="fab fa-telegram-plane"></i>
             </a>
         </div>
         <div class="copyright-fire">
@@ -5443,11 +5487,10 @@ function copy(text) {
                 showConfirmButton: false,
                 backdrop: 'rgba(0,0,0,0.4)',
                 customClass: {
-                    popup: 'swal-copy-popup',
-                    title: 'swal-copy-title',
-                    htmlContainer: 'swal-copy-content'
-                }
-            });
+        title: 'small-title',
+        htmlContainer: 'small-text'
+    }
+});
         })
         .catch(() => {
             Swal.fire({
@@ -5737,7 +5780,7 @@ document.getElementById('search-button').addEventListener('click', executeSearch
   `, { headers: { 'Content-Type': 'text/html' } });
 }
 
-async function websockerHandler(request, proxyIP, ctx) {
+async function websockerHandler(request, proxyIP) {
   const webSocketPair = new WebSocketPair();
   const [client, webSocket] = Object.values(webSocketPair);
 
@@ -5758,7 +5801,7 @@ async function websockerHandler(request, proxyIP, ctx) {
   let udpStreamWrite = null;
   let isDNS = false;
 
-  ctx.waitUntil(readableWebSocketStream
+  readableWebSocketStream
     .pipeTo(
       new WritableStream({
         async write(chunk, controller) {
@@ -5766,33 +5809,24 @@ async function websockerHandler(request, proxyIP, ctx) {
             return udpStreamWrite(chunk);
           }
           if (remoteSocketWrapper.value) {
-            try {
-              const writer = remoteSocketWrapper.value.writable.getWriter();
-              await writer.write(chunk);
-              writer.releaseLock();
-            } catch (e) {
-              log(`Gagal menulis ke remote socket: ${e.message}`);
-              controller.error(e);
-            }
+            const writer = remoteSocketWrapper.value.writable.getWriter();
+            await writer.write(chunk);
+            writer.releaseLock();
             return;
           }
 
           const protocol = await protocolSniffer(chunk);
           let protocolHeader;
 
-          try {
-            if (protocol === "Trojan") {
-              protocolHeader = parseTrojanHeader(chunk);
-            } else if (protocol === "VLESS") {
-              protocolHeader = parseVlessHeader(chunk);
-            } else if (protocol === "Shadowsocks") {
-              protocolHeader = parseShadowsocksHeader(chunk);
-            } else {
-              throw new Error("Protokol tidak dikenal!");
-            }
-          } catch (e) {
-            log(`Kesalahan parsing protokol: ${e.message}`);
-            throw e;
+          if (protocol === "Trojan") {
+            protocolHeader = parseTrojanHeader(chunk);
+          } else if (protocol === "VLESS") {
+            protocolHeader = parseVlessHeader(chunk);
+          } else if (protocol === "Shadowsocks") {
+            protocolHeader = parseShadowsocksHeader(chunk);
+          } else {
+            parseVmessHeader(chunk);
+            throw new Error("Unknown Protocol!");
           }
 
           addressLog = protocolHeader.addressRemote;
@@ -5806,7 +5840,7 @@ async function websockerHandler(request, proxyIP, ctx) {
             if (protocolHeader.portRemote === 53) {
               isDNS = true;
             } else {
-              throw new Error("UDP hanya didukung untuk port DNS 53");
+              throw new Error("UDP only support for DNS port 53");
             }
           }
 
@@ -5817,37 +5851,28 @@ async function websockerHandler(request, proxyIP, ctx) {
             return;
           }
 
-          // Kirim header respon (khusus VLESS) segera agar client tidak timeout
-          if (protocolHeader.version) {
-            webSocket.send(protocolHeader.version);
-          }
-
-          await handleTCPOutBound(
+          handleTCPOutBound(
             remoteSocketWrapper,
             protocolHeader.addressRemote,
             protocolHeader.portRemote,
             protocolHeader.rawClientData,
             webSocket,
-            null, // Header sudah dikirim
+            protocolHeader.version,
             log,
-            proxyIP,
-            ctx
+            proxyIP
           );
         },
         close() {
-          log(`readableWebSocketStream ditutup`);
-          if (remoteSocketWrapper.value) remoteSocketWrapper.value.close();
+          log(`readableWebSocketStream is close`);
         },
         abort(reason) {
-          log(`readableWebSocketStream abort: ${reason}`);
-          if (remoteSocketWrapper.value) remoteSocketWrapper.value.close();
+          log(`readableWebSocketStream is abort`, JSON.stringify(reason));
         },
       })
     )
     .catch((err) => {
       log("readableWebSocketStream pipeTo error", err);
-      safeCloseWebSocket(webSocket);
-    }));
+    });
 
   return new Response(null, {
     status: 101,
@@ -5884,53 +5909,39 @@ async function handleTCPOutBound(
   webSocket,
   responseHeader,
   log,
-  proxyIP,
-  ctx
+  proxyIP
 ) {
   async function connectAndWrite(address, port) {
     const tcpSocket = connect({
       hostname: address,
       port: port,
     });
+    remoteSocket.value = tcpSocket;
+    log(`connected to ${address}:${port}`);
     const writer = tcpSocket.writable.getWriter();
-    try {
-      await writer.write(rawClientData);
-    } catch (e) {
-      log(`failed to write to ${address}:${port}: ${e.message}`);
-      tcpSocket.close();
-      throw e;
-    } finally {
-      writer.releaseLock();
-    }
+    await writer.write(rawClientData);
+    writer.releaseLock();
     return tcpSocket;
   }
 
-  async function retry(headerAlreadySent = false) {
-    if (!proxyIP || proxyIP === "Unknown:Unknown") {
-      log("No proxy available for retry");
-      safeCloseWebSocket(webSocket);
-      return;
-    }
-    try {
-      const [pIP, pPort] = proxyIP.split(/[:=-]/);
-      log(`Retrying via ${pIP}:${pPort}`);
-      const tcpSocket = await connectAndWrite(pIP || addressRemote, pPort || portRemote);
-      remoteSocket.value = tcpSocket;
-      remoteSocketToWS(tcpSocket, webSocket, headerAlreadySent ? null : responseHeader, null, log, ctx);
-    } catch (error) {
-      log(`Retry failed: ${error.message}`);
-      safeCloseWebSocket(webSocket);
-    }
+  async function retry() {
+    const tcpSocket = await connectAndWrite(
+      proxyIP.split(/[:=-]/)[0] || addressRemote,
+      proxyIP.split(/[:=-]/)[1] || portRemote
+    );
+    tcpSocket.closed
+      .catch((error) => {
+        console.log("retry tcpSocket closed error", error);
+      })
+      .finally(() => {
+        safeCloseWebSocket(webSocket);
+      });
+    remoteSocketToWS(tcpSocket, webSocket, responseHeader, null, log);
   }
 
-  try {
-    const tcpSocket = await connectAndWrite(addressRemote, portRemote);
-    remoteSocket.value = tcpSocket;
-    remoteSocketToWS(tcpSocket, webSocket, responseHeader, retry, log, ctx);
-  } catch (error) {
-    log(`Initial connection failed: ${error.message}. Retrying via proxy if available...`);
-    await retry(false);
-  }
+  const tcpSocket = await connectAndWrite(addressRemote, portRemote);
+
+  remoteSocketToWS(tcpSocket, webSocket, responseHeader, retry, log);
 }
 
 function makeReadableWebSocketStream(webSocketServer, earlyDataHeader, log) {
@@ -6182,45 +6193,41 @@ function parseTrojanHeader(buffer) {
   };
 }
 
-async function remoteSocketToWS(remoteSocket, webSocket, responseHeader, retry, log, ctx) {
+async function remoteSocketToWS(remoteSocket, webSocket, responseHeader, retry, log) {
+  let header = responseHeader;
   let hasIncomingData = false;
-
-  if (responseHeader) {
-    webSocket.send(responseHeader);
-  }
-
-  const pump = remoteSocket.readable
+  await remoteSocket.readable
     .pipeTo(
       new WritableStream({
         start() {},
         async write(chunk, controller) {
           hasIncomingData = true;
           if (webSocket.readyState !== WS_READY_STATE_OPEN) {
-            controller.error("webSocket.readyState is not open");
+            controller.error("webSocket.readyState is not open, maybe close");
           }
-          webSocket.send(chunk);
+          if (header) {
+            webSocket.send(await new Blob([header, chunk]).arrayBuffer());
+            header = null;
+          } else {
+            webSocket.send(chunk);
+          }
         },
         close() {
-          log(`remoteConnection!.readable ditutup, hasIncomingData: ${hasIncomingData}`);
+          log(`remoteConnection!.readable is close with hasIncomingData is ${hasIncomingData}`);
         },
         abort(reason) {
-          log(`remoteConnection!.readable abort: ${reason}`);
+          console.error(`remoteConnection!.readable abort`, reason);
         },
       })
     )
     .catch((error) => {
-      log(`remoteSocketToWS error: ${error.message}`);
-    })
-    .finally(async () => {
-      if (hasIncomingData === false && retry) {
-        log(`Retrying connection...`);
-        await retry(true);
-      } else {
-        safeCloseWebSocket(webSocket);
-      }
+      console.error(`remoteSocketToWS has exception `, error.stack || error);
+      safeCloseWebSocket(webSocket);
     });
-
-  ctx.waitUntil(pump);
+  if (hasIncomingData === false && retry) {
+    log(`retry`);
+    retry();
+  }
 }
 
 function base64ToArrayBuffer(base64Str) {
