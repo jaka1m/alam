@@ -20,14 +20,14 @@ export default {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
-        
+
         console.log("Importing from:", importUrl);
         const res = await fetch(importUrl);
-        
+
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: Gagal mengambil file dari ${importUrl}`);
         }
-        
+
         const code = await res.text();
         return new Response(JSON.stringify({ success: true, code }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -74,20 +74,20 @@ export default {
         if (url.pathname === '/api/get') {
           const workerName = url.searchParams.get("name");
           const accountId = await getAccountId();
-          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}`, { 
-            headers: commonHeaders 
+          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}`, {
+            headers: commonHeaders
           });
-          
+
           let scriptContent = await res.text();
-          
+
           // Bersihkan dari multipart boundary jika ada
           scriptContent = scriptContent.replace(/^--[a-f0-9]+(\r?\n)Content-Disposition: form-data; name="[^"]+"(\r?\n\r?\n)?/gm, '');
           scriptContent = scriptContent.replace(/--[a-f0-9]+--(\r?\n)?$/g, '');
           scriptContent = scriptContent.replace(/--[a-f0-9]+(\r?\n)Content-Disposition: form-data; name="[^"]+"(\r?\n\r?\n)?/g, '');
           scriptContent = scriptContent.trim();
-          
-          return new Response(JSON.stringify({ success: true, code: scriptContent }), { 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+
+          return new Response(JSON.stringify({ success: true, code: scriptContent }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
 
@@ -95,19 +95,19 @@ export default {
         if (url.pathname === '/api/get-custom-domains') {
           const workerName = url.searchParams.get("name");
           const accountId = await getAccountId();
-          
+
           try {
             const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}/subdomain`, {
               headers: commonHeaders
             });
             const data = await res.json();
-            
+
             // Ambil daftar custom domain dari zone
             const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, {
               headers: commonHeaders
             });
             const zonesData = await zonesRes.json();
-            
+
             const domains = [];
             if (zonesData.success && zonesData.result) {
               for (const zone of zonesData.result) {
@@ -118,13 +118,13 @@ export default {
                 });
               }
             }
-            
-            return new Response(JSON.stringify({ 
-              success: true, 
+
+            return new Response(JSON.stringify({
+              success: true,
               subdomain: data.success ? `https://${workerName}.workers.dev` : null,
               customDomains: domains
-            }), { 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
           } catch(e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), {
@@ -133,29 +133,43 @@ export default {
           }
         }
 
-        // Attach Custom Domain ke Worker
+        // Attach Custom Domain ke Worker (Bulk)
         if (url.pathname === '/api/attach-domain') {
-          const { workerName, domain, zoneId } = await request.json();
+          const { workerName, domains, zoneId, zoneName } = await request.json();
           const accountId = await getAccountId();
-          
+
           try {
-            // Pertama, buat route untuk domain
-            const routeRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes`, {
-              method: "POST",
-              headers: commonHeaders,
-              body: JSON.stringify({
-                pattern: `${domain}/*`,
-                script: workerName
-              })
-            });
-            
-            const routeData = await routeRes.json();
-            
-            return new Response(JSON.stringify({ 
-              success: routeData.success,
-              message: routeData.success ? `Domain ${domain} berhasil diattach ke ${workerName}` : routeData.errors?.[0]?.message
-            }), { 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            const domainList = domains.split(/[\n,]/).map(d => d.trim()).filter(d => d !== "");
+            const results = [];
+
+            for (const d of domainList) {
+              const hostname = d.includes(".") ? d : `${d}.${zoneName}`;
+
+              const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
+                method: "PUT",
+                headers: commonHeaders,
+                body: JSON.stringify({
+                  environment: "production",
+                  hostname: hostname,
+                  service: workerName,
+                  zone_id: zoneId
+                })
+              });
+
+              const data = await res.json();
+              results.push({ hostname, success: data.success, error: data.errors?.[0]?.message });
+            }
+
+            const allSuccess = results.every(r => r.success);
+            const message = allSuccess
+              ? `Berhasil mengattach ${results.length} domain ke ${workerName}`
+              : `Beberapa domain gagal diattach: ` + results.filter(r => !r.success).map(r => `${r.hostname} (${r.error})`).join(", ");
+
+            return new Response(JSON.stringify({
+              success: allSuccess,
+              message: message
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
           } catch(e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), {
@@ -165,47 +179,36 @@ export default {
           }
         }
 
-        // Get Routes untuk Worker
+        // Get Custom Domains untuk Worker (dari Workers Domains API)
         if (url.pathname === '/api/get-routes') {
           const workerName = url.searchParams.get("name");
           const accountId = await getAccountId();
-          
+
           try {
-            // Ambil semua zone
-            const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, {
+            const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
               headers: commonHeaders
             });
-            const zonesData = await zonesRes.json();
-            
-            const allRoutes = [];
-            
-            if (zonesData.success && zonesData.result) {
-              for (const zone of zonesData.result) {
-                const routesRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}/workers/routes`, {
-                  headers: commonHeaders
-                });
-                const routesData = await routesRes.json();
-                
-                if (routesData.success && routesData.result) {
-                  for (const route of routesData.result) {
-                    if (route.script === workerName) {
-                      allRoutes.push({
-                        id: route.id,
-                        pattern: route.pattern,
-                        zone_name: zone.name,
-                        zone_id: zone.id
-                      });
-                    }
-                  }
+            const data = await res.json();
+
+            const domains = [];
+            if (data.success && data.result) {
+              for (const domain of data.result) {
+                if (domain.service === workerName) {
+                  domains.push({
+                    id: domain.id,
+                    hostname: domain.hostname,
+                    zone_name: domain.zone_name,
+                    zone_id: domain.zone_id
+                  });
                 }
               }
             }
-            
-            return new Response(JSON.stringify({ 
-              success: true, 
-              routes: allRoutes
-            }), { 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+
+            return new Response(JSON.stringify({
+              success: true,
+              routes: domains // Tetap pakai key routes agar tidak banyak ubah frontend
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
           } catch(e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), {
@@ -214,22 +217,23 @@ export default {
           }
         }
 
-        // Delete Custom Domain (Route)
+        // Delete Custom Domain (Workers Domains API)
         if (url.pathname === '/api/delete-domain') {
-          const { zoneId, routeId } = await request.json();
-          
+          const { domainId } = await request.json();
+          const accountId = await getAccountId();
+
           try {
-            const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes/${routeId}`, {
+            const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains/${domainId}`, {
               method: "DELETE",
               headers: commonHeaders
             });
             const data = await res.json();
-            
-            return new Response(JSON.stringify({ 
+
+            return new Response(JSON.stringify({
               success: data.success,
               message: data.success ? "Domain berhasil dihapus" : data.errors?.[0]?.message
-            }), { 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
           } catch(e) {
             return new Response(JSON.stringify({ success: false, error: e.message }), {
@@ -243,7 +247,7 @@ export default {
         if (url.pathname === '/api/delete') {
           const { name } = await request.json();
           if (!name) throw new Error("Nama worker diperlukan");
-          
+
           const accountId = await getAccountId();
           const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${name}`, {
             method: "DELETE",
@@ -268,7 +272,7 @@ export default {
             body: formData
           });
           const data = await res.json();
-          
+
           let subdomainUrl = null;
           if (data.success) {
             try {
@@ -285,7 +289,7 @@ export default {
               console.log("Subdomain activation failed:", e);
             }
           }
-          
+
           return new Response(JSON.stringify({ ...data, subdomain: subdomainUrl }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 
@@ -563,7 +567,7 @@ export default {
           overflow-y: auto;
           padding: 4px;
         }
-        
+
         .worker-card {
           background: linear-gradient(135deg, var(--card), var(--bg));
           border: 1px solid var(--border);
@@ -578,19 +582,19 @@ export default {
           min-width: 180px;
           flex: 1 0 auto;
         }
-        
+
         .worker-card:hover {
           border-color: var(--blue);
           transform: translateY(-2px);
           background: rgba(59,130,246,0.1);
         }
-        
+
         .worker-card.selected {
           border-color: var(--blue);
           background: rgba(59,130,246,0.15);
           box-shadow: 0 0 0 1px var(--blue);
         }
-        
+
         .worker-icon {
           width: 36px;
           height: 36px;
@@ -601,24 +605,24 @@ export default {
           justify-content: center;
           font-size: 18px;
         }
-        
+
         .worker-info {
           flex: 1;
         }
-        
+
         .worker-name {
           font-weight: 600;
           font-size: 14px;
           font-family: monospace;
           word-break: break-all;
         }
-        
+
         .worker-status {
           font-size: 10px;
           color: var(--green);
           margin-top: 4px;
         }
-        
+
         .delete-worker-btn {
           background: transparent;
           border: none;
@@ -629,12 +633,12 @@ export default {
           transition: all 0.2s;
           font-size: 14px;
         }
-        
+
         .delete-worker-btn:hover {
           background: rgba(239,68,68,0.2);
           transform: scale(1.05);
         }
-        
+
         .section-label {
           font-size: 11px;
           color: var(--text-secondary);
@@ -642,7 +646,7 @@ export default {
           letter-spacing: 1px;
           font-weight: 600;
         }
-        
+
         .empty-workers {
           text-align: center;
           padding: 40px;
@@ -715,7 +719,7 @@ export default {
           overflow: hidden;
           background: #1a1d24;
         }
-        
+
         #editor, #highlighting {
           margin: 0;
           padding: 16px;
@@ -732,7 +736,7 @@ export default {
           overflow: auto;
           white-space: pre;
         }
-        
+
         #editor {
           color: transparent;
           background: transparent;
@@ -742,7 +746,7 @@ export default {
           outline: none;
           -webkit-text-fill-color: transparent;
         }
-        
+
         #highlighting {
           z-index: 0;
           pointer-events: none;
@@ -782,7 +786,7 @@ export default {
           .main-content.shifted { margin-left: 0; }
           .worker-card { width: calc(50% - 6px); min-width: 140px; }
         }
-        
+
         @media (max-width: 480px) {
           .worker-card { width: 100%; }
         }
@@ -790,7 +794,7 @@ export default {
     </head>
     <body>
       <div class="loading-bar" id="loadingBar"></div>
-      
+
       <div class="menu-btn" onclick="toggleSidebar()">
         <span></span>
         <span></span>
@@ -824,7 +828,7 @@ export default {
             <button onclick="loadCustomDomains()" class="btn-purple" id="loadDomainsBtn" disabled style="width:100%; margin-bottom:12px;">📋 Load Domains</button>
             <div id="domainList" style="max-height: 200px; overflow-y: auto;"></div>
             <div id="addDomainForm" class="hidden" style="display:none; margin-top: 12px;">
-              <input type="text" id="newDomain" placeholder="contoh: proxy.jamol.web.id" />
+              <textarea id="newDomain" placeholder="Subdomain (bulk ok, pisah baris)&#10;Contoh:&#10;testing&#10;api&#10;blog" style="min-height: 80px;"></textarea>
               <select id="zoneSelect" style="margin-bottom: 12px;"></select>
               <div class="flex">
                 <button onclick="attachCustomDomain()" class="btn-green" style="flex:1">➕ Attach</button>
@@ -880,8 +884,8 @@ export default {
               <button onclick="importFromUrl()" class="btn-orange">📥 Import</button>
             </div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-              📌 Contoh: 
-              <span onclick="setExampleUrl('https://raw.githubusercontent.com/example/worker.js')" style="color: var(--blue); cursor: pointer;">GitHub Raw</span> | 
+              📌 Contoh:
+              <span onclick="setExampleUrl('https://raw.githubusercontent.com/example/worker.js')" style="color: var(--blue); cursor: pointer;">GitHub Raw</span> |
               <span onclick="setExampleUrl('https://r2.lunas.workers.dev/raw/xnxn.js')" style="color: var(--orange); cursor: pointer;">R2</span>
             </div>
           </div>
@@ -902,47 +906,47 @@ export default {
 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-      
+
       <script>
         let loadingTimeout;
         let selectedWorkerName = null;
-        
+
         function showLoading() {
           const loadingBar = document.getElementById('loadingBar');
           loadingBar.classList.add('active');
           if (loadingTimeout) clearTimeout(loadingTimeout);
         }
-        
+
         function hideLoading() {
           const loadingBar = document.getElementById('loadingBar');
           loadingBar.classList.remove('active');
         }
-        
+
         function toggleSidebar() {
           const sidebar = document.getElementById('sidebar');
           const overlay = document.getElementById('overlay');
           const mainContent = document.getElementById('mainContent');
-          
+
           sidebar.classList.toggle('open');
           overlay.classList.toggle('active');
-          
+
           if (sidebar.classList.contains('open')) {
             mainContent.classList.add('shifted');
           } else {
             mainContent.classList.remove('shifted');
           }
         }
-        
+
         function closeSidebar() {
           const sidebar = document.getElementById('sidebar');
           const overlay = document.getElementById('overlay');
           const mainContent = document.getElementById('mainContent');
-          
+
           sidebar.classList.remove('open');
           overlay.classList.remove('active');
           mainContent.classList.remove('shifted');
         }
-        
+
         const $ = id => document.getElementById(id);
         let accounts = JSON.parse(localStorage.getItem('cf_accounts_v2') || '[]');
         let currentAcc = null;
@@ -950,7 +954,7 @@ export default {
         let currentWorkerDomains = [];
         let availableZones = [];
 
-        function toggleAddForm() { 
+        function toggleAddForm() {
           const form = $('addAccForm');
           const btns = $('accActionBtns');
           if (form.style.display === 'none' || form.style.display === '') {
@@ -1022,7 +1026,7 @@ export default {
             container.innerHTML = '<div class="empty-workers">📭 Belum ada worker. Buat worker baru dengan mengisi nama dan deploy!</div>';
             return;
           }
-          
+
           container.innerHTML = workersList.map(worker => \`
             <div class="worker-card \${selectedWorkerName === worker.id ? 'selected' : ''}" onclick="selectWorker('\${worker.id}')">
               <div class="worker-icon">⚡</div>
@@ -1042,9 +1046,9 @@ export default {
             $('loadDomainsBtn').disabled = true;
             return;
           }
-          
+
           showLoading();
-          
+
           try {
             const res = await fetch('/api/list', {
               headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
@@ -1053,28 +1057,28 @@ export default {
             if(d.success) {
               workersList = d.result || [];
               renderWorkerGrid();
-              
+
               $('customDomainSelect').disabled = false;
               $('loadDomainsBtn').disabled = false;
-              $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>' + 
+              $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>' +
                 workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
             } else {
               throw new Error(d.errors?.[0]?.message || "Gagal load");
             }
-          } catch(e) { 
+          } catch(e) {
             notify(e.message, true);
             $('workerGridContainer').innerHTML = '<div class="empty-workers">❌ Gagal memuat worker: ' + e.message + '</div>';
           } finally {
             hideLoading();
           }
         }
-        
+
         function selectWorker(workerName) {
           selectedWorkerName = workerName;
           renderWorkerGrid();
           notify(\`✅ Worker "\${workerName}" dipilih\`);
         }
-        
+
         async function loadSelectedWorker() {
           if(!selectedWorkerName) {
             notify("Pilih worker terlebih dahulu dengan mengklik card worker!", true);
@@ -1089,37 +1093,37 @@ export default {
             notify("Pilih worker terlebih dahulu!", true);
             return;
           }
-          
+
           showLoading();
           notify("Memuat domain...");
-          
+
           try {
             const routesRes = await fetch('/api/get-routes?name=' + encodeURIComponent(workerName), {
               headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
             });
             const routesData = await routesRes.json();
-            
+
             const domainsRes = await fetch('/api/get-custom-domains?name=' + encodeURIComponent(workerName), {
               headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
             });
             const domainsData = await domainsRes.json();
-            
+
             if(domainsData.success) {
               availableZones = domainsData.customDomains || [];
               $('zoneSelect').innerHTML = availableZones.map(z => \`<option value="\${z.zone_id}">\${z.zone_name}</option>\`).join('');
             }
-            
+
             if(routesData.success && routesData.routes) {
               currentWorkerDomains = routesData.routes;
-              $('domainList').innerHTML = currentWorkerDomains.length === 0 ? 
+              $('domainList').innerHTML = currentWorkerDomains.length === 0 ?
                 '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Belum ada custom domain</div>' :
                 currentWorkerDomains.map(route => \`
                   <div class="domain-item">
                     <div>
-                      <div style="font-family: monospace; color: var(--blue);">🔗 \${route.pattern.replace('/*', '')}</div>
+                      <div style="font-family: monospace; color: var(--blue);">🔗 \${route.hostname}</div>
                       <small style="color: var(--text-secondary);">Zone: \${route.zone_name}</small>
                     </div>
-                    <span class="delete-domain" onclick="deleteCustomDomain('\${route.zone_id}', '\${route.id}')" style="color: var(--red); cursor: pointer;">🗑️</span>
+                    <span class="delete-domain" onclick="deleteCustomDomain('\${route.id}')" style="color: var(--red); cursor: pointer;">🗑️</span>
                   </div>
                 \`).join('');
               notify("✅ Domain berhasil dimuat!");
@@ -1132,28 +1136,29 @@ export default {
             hideLoading();
           }
         }
-        
+
         async function attachCustomDomain() {
           const workerName = $('customDomainSelect').value;
-          const domain = $('newDomain').value.trim();
+          const domains = $('newDomain').value.trim();
           const zoneId = $('zoneSelect').value;
-          
+          const zoneName = availableZones.find(z => z.zone_id === zoneId)?.zone_name;
+
           if(!workerName) {
             notify("Pilih worker terlebih dahulu!", true);
             return;
           }
-          if(!domain) {
-            notify("Masukkan domain!", true);
+          if(!domains) {
+            notify("Masukkan domain/subdomain!", true);
             return;
           }
           if(!zoneId) {
             notify("Pilih zone!", true);
             return;
           }
-          
+
           showLoading();
-          notify(\`Mengattach domain \${domain} ke \${workerName}...\`);
-          
+          notify(\`Mengattach domain ke \${workerName}...\`);
+
           try {
             const res = await fetch('/api/attach-domain', {
               method: 'POST',
@@ -1162,7 +1167,7 @@ export default {
                 'X-Auth-Key': currentAcc.key,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ workerName, domain, zoneId })
+              body: JSON.stringify({ workerName, domains, zoneId, zoneName })
             });
             const d = await res.json();
             if(d.success) {
@@ -1179,13 +1184,13 @@ export default {
             hideLoading();
           }
         }
-        
-        async function deleteCustomDomain(zoneId, routeId) {
+
+        async function deleteCustomDomain(domainId) {
           if(!confirm("Yakin ingin menghapus custom domain ini?")) return;
-          
+
           showLoading();
           notify("Menghapus domain...");
-          
+
           try {
             const res = await fetch('/api/delete-domain', {
               method: 'POST',
@@ -1194,7 +1199,7 @@ export default {
                 'X-Auth-Key': currentAcc.key,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ zoneId, routeId })
+              body: JSON.stringify({ domainId })
             });
             const d = await res.json();
             if(d.success) {
@@ -1212,10 +1217,10 @@ export default {
 
         async function deleteWorker(workerName) {
           if(!confirm(\`Yakin ingin menghapus worker "\${workerName}"?\`)) return;
-          
+
           showLoading();
           notify(\`Menghapus \${workerName}...\`);
-          
+
           try {
             const res = await fetch('/api/delete', {
               method: 'DELETE',
@@ -1252,10 +1257,10 @@ export default {
             notify("Masukkan URL terlebih dahulu!", true);
             return;
           }
-          
+
           showLoading();
           notify("Mengambil kode dari URL...");
-          
+
           try {
             const res = await fetch('/api/import', {
               method: 'POST',
@@ -1279,10 +1284,10 @@ export default {
 
         async function loadWorker(workerName) {
           if(!workerName || !currentAcc) return notify("Pilih worker terlebih dahulu", true);
-          
+
           showLoading();
           notify("Mengambil kode...");
-          
+
           try {
             const res = await fetch('/api/get?name=' + encodeURIComponent(workerName), {
               headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
@@ -1295,8 +1300,8 @@ export default {
             } else {
               throw new Error(d.errors?.[0]?.message || "Gagal ambil kode");
             }
-          } catch(e) { 
-            notify("❌ Gagal ambil kode: " + e.message, true); 
+          } catch(e) {
+            notify("❌ Gagal ambil kode: " + e.message, true);
           } finally {
             hideLoading();
           }
@@ -1306,23 +1311,23 @@ export default {
           let workerName = selectedWorkerName;
           const newName = $('newWorkerName').value.trim();
           const code = $('editor').value;
-          
+
           if(!code) return notify("Kode masih kosong!", true);
-          
+
           if(newName) {
             workerName = newName;
           }
-          
+
           if(!workerName) return notify("Pilih worker dari list atau isi nama worker baru!", true);
-          
+
           showLoading();
           notify("Mendeploy ke Cloudflare...");
-          
+
           try {
             const res = await fetch('/api/update', {
               method: 'POST',
-              headers: { 
-                'X-Auth-Email': currentAcc.email, 
+              headers: {
+                'X-Auth-Email': currentAcc.email,
                 'X-Auth-Key': currentAcc.key,
                 'Content-Type': 'application/json'
               },
@@ -1345,8 +1350,8 @@ export default {
             } else {
               notify("❌ Gagal: " + (d.errors?.[0]?.message || "Unknown error"), true);
             }
-          } catch(e) { 
-            notify("❌ Network Error: " + e.message, true); 
+          } catch(e) {
+            notify("❌ Network Error: " + e.message, true);
           } finally {
             hideLoading();
           }
@@ -1369,7 +1374,7 @@ export default {
           toast.className = "status-toast" + (err ? " error" : "");
           toast.innerText = msg;
           toast.style.display = "block";
-          
+
           setTimeout(() => {
             toast.style.display = "none";
           }, 5000);
