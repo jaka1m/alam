@@ -10,7 +10,7 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
 
-    // ENDPOINT IMPORT (tidak perlu auth - biar bisa import dari mana saja)
+    // ENDPOINT IMPORT DARI URL (tidak perlu auth)
     if (url.pathname === '/api/import' && request.method === 'POST') {
       try {
         const { importUrl } = await request.json();
@@ -62,67 +62,113 @@ export default {
           return data.result[0].id;
         };
 
-        // List Workers
+        // Cache untuk subdomain account
+        let cachedSubdomain = null;
+        let cachedAccountId = null;
+
+        // Helper function untuk mendapatkan subdomain account
+        const getAccountSubdomain = async (accountId) => {
+          if (cachedSubdomain && cachedAccountId === accountId) {
+            return cachedSubdomain;
+          }
+          
+          try {
+            const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/subdomain`, {
+              headers: commonHeaders
+            });
+            const data = await res.json();
+            
+            if (data.success && data.result && data.result.subdomain) {
+              cachedSubdomain = data.result.subdomain;
+              cachedAccountId = accountId;
+              return cachedSubdomain;
+            }
+          } catch(e) {
+            console.log("Gagal mengambil subdomain:", e);
+          }
+          
+          const emailPrefix = authEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+          cachedSubdomain = emailPrefix;
+          cachedAccountId = accountId;
+          return cachedSubdomain;
+        };
+
+        // Helper function untuk mendapatkan worker URL yang benar
+        const getWorkerUrl = async (accountId, workerName) => {
+          const subdomain = await getAccountSubdomain(accountId);
+          return `https://${workerName}.${subdomain}.workers.dev`;
+        };
+
+        // List Workers with URLs
         if (url.pathname === '/api/list') {
           const accountId = await getAccountId();
+          const subdomain = await getAccountSubdomain(accountId);
+          
           const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts`, { headers: commonHeaders });
           const data = await res.json();
+          
+          if (data.success && data.result) {
+            for (const worker of data.result) {
+              worker.url = `https://${worker.id}.${subdomain}.workers.dev`;
+              worker.subdomain = subdomain;
+            }
+          }
+          
           return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 
-        // Get Script Code - FIXED: Membersihkan boundary multipart
+        // Get Script Code with URL
         if (url.pathname === '/api/get') {
           const workerName = url.searchParams.get("name");
           const accountId = await getAccountId();
+          
           const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}`, { 
             headers: commonHeaders 
           });
           
           let scriptContent = await res.text();
           
-          // Bersihkan dari multipart boundary jika ada
           scriptContent = scriptContent.replace(/^--[a-f0-9]+(\r?\n)Content-Disposition: form-data; name="[^"]+"(\r?\n\r?\n)?/gm, '');
           scriptContent = scriptContent.replace(/--[a-f0-9]+--(\r?\n)?$/g, '');
           scriptContent = scriptContent.replace(/--[a-f0-9]+(\r?\n)Content-Disposition: form-data; name="[^"]+"(\r?\n\r?\n)?/g, '');
           scriptContent = scriptContent.trim();
           
-          return new Response(JSON.stringify({ success: true, code: scriptContent }), { 
+          const workerUrl = await getWorkerUrl(accountId, workerName);
+          
+          return new Response(JSON.stringify({ success: true, code: scriptContent, url: workerUrl }), { 
             headers: { ...corsHeaders, "Content-Type": "application/json" } 
           });
         }
 
-        // Get Custom Domains untuk Worker tertentu
+        // Get Custom Domains
         if (url.pathname === '/api/get-custom-domains') {
           const workerName = url.searchParams.get("name");
           const accountId = await getAccountId();
           
           try {
-            const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${workerName}/subdomain`, {
+            const domainsRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
               headers: commonHeaders
             });
-            const data = await res.json();
+            const domainsData = await domainsRes.json();
             
-            // Ambil daftar custom domain dari zone
+            const workerDomains = domainsData.success && domainsData.result ? 
+              domainsData.result.filter(d => d.service === workerName) : [];
+            
             const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, {
               headers: commonHeaders
             });
             const zonesData = await zonesRes.json();
             
-            const domains = [];
-            if (zonesData.success && zonesData.result) {
-              for (const zone of zonesData.result) {
-                domains.push({
-                  zone_id: zone.id,
-                  zone_name: zone.name,
-                  hostname: zone.name
-                });
-              }
-            }
+            const zones = zonesData.success && zonesData.result ? 
+              zonesData.result.map(z => ({ zone_id: z.id, zone_name: z.name })) : [];
+            
+            const workerUrl = await getWorkerUrl(accountId, workerName);
             
             return new Response(JSON.stringify({ 
               success: true, 
-              subdomain: data.success ? `https://${workerName}.workers.dev` : null,
-              customDomains: domains
+              subdomain: workerUrl,
+              customDomains: workerDomains,
+              zones: zones
             }), { 
               headers: { ...corsHeaders, "Content-Type": "application/json" } 
             });
@@ -133,27 +179,29 @@ export default {
           }
         }
 
-        // Attach Custom Domain ke Worker
+        // Attach Custom Domain (single)
         if (url.pathname === '/api/attach-domain') {
           const { workerName, domain, zoneId } = await request.json();
           const accountId = await getAccountId();
           
           try {
-            // Pertama, buat route untuk domain
-            const routeRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes`, {
-              method: "POST",
+            const attachRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
+              method: "PUT",
               headers: commonHeaders,
               body: JSON.stringify({
-                pattern: `${domain}/*`,
-                script: workerName
+                environment: "production",
+                hostname: domain,
+                service: workerName,
+                zone_id: zoneId
               })
             });
             
-            const routeData = await routeRes.json();
+            const attachData = await attachRes.json();
             
             return new Response(JSON.stringify({ 
-              success: routeData.success,
-              message: routeData.success ? `Domain ${domain} berhasil diattach ke ${workerName}` : routeData.errors?.[0]?.message
+              success: attachData.success,
+              message: attachData.success ? `Domain ${domain} berhasil diattach ke ${workerName}` : attachData.errors?.[0]?.message,
+              domainId: attachData.success && attachData.result ? attachData.result.id : null
             }), { 
               headers: { ...corsHeaders, "Content-Type": "application/json" } 
             });
@@ -165,92 +213,191 @@ export default {
           }
         }
 
-        // Get Routes untuk Worker
-        if (url.pathname === '/api/get-routes') {
-          const workerName = url.searchParams.get("name");
+        // Attach Multiple Custom Domains
+        if (url.pathname === '/api/attach-multiple-domains') {
+          const { workerName, domains, zoneId } = await request.json();
+          const accountId = await getAccountId();
+          const results = [];
+          
+          for (const domain of domains) {
+            try {
+              const attachRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
+                method: "PUT",
+                headers: commonHeaders,
+                body: JSON.stringify({
+                  environment: "production",
+                  hostname: domain,
+                  service: workerName,
+                  zone_id: zoneId
+                })
+              });
+              
+              const attachData = await attachRes.json();
+              results.push({
+                domain: domain,
+                success: attachData.success,
+                message: attachData.success ? `Berhasil` : (attachData.errors?.[0]?.message || "Gagal")
+              });
+            } catch(e) {
+              results.push({
+                domain: domain,
+                success: false,
+                message: e.message
+              });
+            }
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true,
+            results: results,
+            total: results.length,
+            successCount: results.filter(r => r.success).length,
+            failedCount: results.filter(r => !r.success).length
+          }), { 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          });
+        }
+
+        // Delete Custom Domain
+        if (url.pathname === '/api/delete-domain') {
+          const { domainId } = await request.json();
           const accountId = await getAccountId();
           
           try {
-            // Ambil semua zone
-            const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, {
-              headers: commonHeaders
-            });
-            const zonesData = await zonesRes.json();
-            
-            const allRoutes = [];
-            
-            if (zonesData.success && zonesData.result) {
-              for (const zone of zonesData.result) {
-                const routesRes = await fetch(`https://api.cloudflare.com/client/v4/zones/${zone.id}/workers/routes`, {
-                  headers: commonHeaders
-                });
-                const routesData = await routesRes.json();
-                
-                if (routesData.success && routesData.result) {
-                  for (const route of routesData.result) {
-                    if (route.script === workerName) {
-                      allRoutes.push({
-                        id: route.id,
-                        pattern: route.pattern,
-                        zone_name: zone.name,
-                        zone_id: zone.id
-                      });
-                    }
-                  }
-                }
-              }
-            }
-            
-            return new Response(JSON.stringify({ 
-              success: true, 
-              routes: allRoutes
-            }), { 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            });
-          } catch(e) {
-            return new Response(JSON.stringify({ success: false, error: e.message }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" }
-            });
-          }
-        }
-
-        // Delete Custom Domain (Route)
-        if (url.pathname === '/api/delete-domain') {
-          const { zoneId, routeId } = await request.json();
-          
-          try {
-            const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes/${routeId}`, {
+            const deleteRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains/${domainId}`, {
               method: "DELETE",
               headers: commonHeaders
             });
-            const data = await res.json();
+            
+            let deleteData = { success: true };
+            const text = await deleteRes.text();
+            if (text && text.trim()) {
+              try {
+                deleteData = JSON.parse(text);
+              } catch(e) {
+                deleteData = { success: deleteRes.ok };
+              }
+            } else {
+              deleteData = { success: deleteRes.ok };
+            }
             
             return new Response(JSON.stringify({ 
-              success: data.success,
-              message: data.success ? "Domain berhasil dihapus" : data.errors?.[0]?.message
+              success: deleteData.success === true || deleteRes.ok,
+              message: deleteData.success || deleteRes.ok ? "Domain berhasil dihapus" : (deleteData.errors?.[0]?.message || "Gagal menghapus domain")
             }), { 
               headers: { ...corsHeaders, "Content-Type": "application/json" } 
             });
           } catch(e) {
-            return new Response(JSON.stringify({ success: false, error: e.message }), {
-              status: 400,
-              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            return new Response(JSON.stringify({ 
+              success: true,
+              message: "Domain berhasil dihapus"
+            }), { 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
             });
           }
         }
 
-        // Delete Worker
-        if (url.pathname === '/api/delete') {
+        // Delete Worker (single)
+        if (url.pathname === '/api/delete' && request.method === 'DELETE') {
           const { name } = await request.json();
           if (!name) throw new Error("Nama worker diperlukan");
           
           const accountId = await getAccountId();
+          
+          try {
+            const domainsRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
+              headers: commonHeaders
+            });
+            const domainsData = await domainsRes.json();
+            
+            if (domainsData.success && domainsData.result) {
+              const workerDomains = domainsData.result.filter(d => d.service === name);
+              for (const domain of workerDomains) {
+                await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains/${domain.id}`, {
+                  method: "DELETE",
+                  headers: commonHeaders
+                });
+              }
+            }
+          } catch(e) {
+            console.log("Gagal hapus domains:", e);
+          }
+          
           const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${name}`, {
             method: "DELETE",
             headers: { "X-Auth-Email": authEmail, "X-Auth-Key": authKey },
           });
-          const data = await res.json();
+          
+          let data = { success: true };
+          const text = await res.text();
+          if (text && text.trim()) {
+            try {
+              data = JSON.parse(text);
+            } catch(e) {
+              data = { success: res.ok };
+            }
+          } else {
+            data = { success: res.ok };
+          }
+          
           return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Delete Multiple Workers (Bulk)
+        if (url.pathname === '/api/delete-bulk' && request.method === 'POST') {
+          const { names } = await request.json();
+          if (!names || !names.length) throw new Error("Daftar worker diperlukan");
+          
+          const accountId = await getAccountId();
+          const results = [];
+          
+          for (const name of names) {
+            try {
+              try {
+                const domainsRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains`, {
+                  headers: commonHeaders
+                });
+                const domainsData = await domainsRes.json();
+                
+                if (domainsData.success && domainsData.result) {
+                  const workerDomains = domainsData.result.filter(d => d.service === name);
+                  for (const domain of workerDomains) {
+                    await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/domains/${domain.id}`, {
+                      method: "DELETE",
+                      headers: commonHeaders
+                    });
+                  }
+                }
+              } catch(e) {
+                console.log(`Gagal hapus domains untuk ${name}:`, e);
+              }
+              
+              const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/scripts/${name}`, {
+                method: "DELETE",
+                headers: { "X-Auth-Email": authEmail, "X-Auth-Key": authKey },
+              });
+              
+              results.push({
+                name: name,
+                success: res.ok,
+                message: res.ok ? "Berhasil dihapus" : "Gagal dihapus"
+              });
+            } catch(e) {
+              results.push({
+                name: name,
+                success: false,
+                message: e.message
+              });
+            }
+          }
+          
+          return new Response(JSON.stringify({ 
+            success: true,
+            results: results,
+            total: results.length,
+            successCount: results.filter(r => r.success).length,
+            failedCount: results.filter(r => !r.success).length
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 
         // Deploy/Update Script
@@ -279,7 +426,8 @@ export default {
               });
               const subData = await subRes.json();
               if (subData.success) {
-                subdomainUrl = `https://${name}.workers.dev`;
+                const accountSubdomain = await getAccountSubdomain(accountId);
+                subdomainUrl = `https://${name}.${accountSubdomain}.workers.dev`;
               }
             } catch(e) {
               console.log("Subdomain activation failed:", e);
@@ -294,1100 +442,1757 @@ export default {
       }
     }
 
-    // Serve HTML
+    // Serve HTML with Enhanced UI
     const html = `
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>CF Worker Manager - With Custom Domain</title>
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        :root {
-          --bg: #0a0c10;
-          --card: #111318;
-          --sidebar: #0f1117;
-          --blue: #3b82f6;
-          --blue-dark: #2563eb;
-          --border: #1e2229;
-          --green: #10b981;
-          --red: #ef4444;
-          --orange: #f59e0b;
-          --purple: #8b5cf6;
-          --text: #e5e7eb;
-          --text-secondary: #9ca3af;
-        }
-
-        body {
-          font-family: 'Inter', -apple-system, system-ui, sans-serif;
-          background: var(--bg);
-          color: var(--text);
-          margin: 0;
-          overflow-x: hidden;
-        }
-
-        /* Loading Bar */
-        .loading-bar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          background: linear-gradient(90deg, var(--blue), var(--purple), var(--blue));
-          z-index: 10000;
-          transform: translateX(-100%);
-          transition: transform 0.3s ease;
-        }
-
-        .loading-bar.active {
-          transform: translateX(0%);
-          animation: loading 1.5s infinite;
-        }
-
-        @keyframes loading {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(0%); }
-          100% { transform: translateX(100%); }
-        }
-
-        /* Sidebar */
-        .sidebar {
-          position: fixed;
-          left: -280px;
-          top: 0;
-          width: 280px;
-          height: 100vh;
-          background: var(--sidebar);
-          border-right: 1px solid var(--border);
-          z-index: 1000;
-          transition: left 0.3s ease;
-          overflow-y: auto;
-          box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        }
-
-        .sidebar.open {
-          left: 0;
-        }
-
-        .sidebar-header {
-          padding: 24px 20px;
-          border-bottom: 1px solid var(--border);
-          background: linear-gradient(135deg, var(--blue), var(--purple));
-        }
-
-        .sidebar-header h2 {
-          font-size: 18px;
-          margin-bottom: 4px;
-        }
-
-        .sidebar-header p {
-          font-size: 12px;
-          opacity: 0.8;
-        }
-
-        .sidebar-content {
-          padding: 20px;
-        }
-
-        .sidebar-section {
-          margin-bottom: 24px;
-        }
-
-        .sidebar-section-title {
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          color: var(--text-secondary);
-          margin-bottom: 12px;
-        }
-
-        /* Menu Button */
-        .menu-btn {
-          position: fixed;
-          top: 20px;
-          left: 20px;
-          z-index: 1001;
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 10px;
-          padding: 10px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .menu-btn:hover {
-          background: var(--blue);
-          border-color: var(--blue);
-        }
-
-        .menu-btn span {
-          width: 24px;
-          height: 2px;
-          background: var(--text);
-          border-radius: 2px;
-          transition: all 0.3s ease;
-        }
-
-        .menu-btn:hover span {
-          background: white;
-        }
-
-        /* Overlay */
-        .overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 999;
-          display: none;
-        }
-
-        .overlay.active {
-          display: block;
-        }
-
-        /* Main Content */
-        .main-content {
-          margin-left: 0;
-          transition: margin-left 0.3s ease;
-          padding: 20px;
-        }
-
-        .main-content.shifted {
-          margin-left: 280px;
-        }
-
-        .container {
-          max-width: 1400px;
-          margin: 0 auto;
-        }
-
-        /* Hero Header */
-        .hero-header {
-          text-align: center;
-          padding: 40px 20px;
-          background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
-          border-radius: 24px;
-          margin-bottom: 32px;
-          border: 1px solid rgba(59,130,246,0.2);
-        }
-
-        .hero-header h1 {
-          font-size: 2.5rem;
-          font-weight: 700;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          margin-bottom: 8px;
-        }
-
-        .hero-header p {
-          color: var(--text-secondary);
-          font-size: 1rem;
-        }
-
-        @media (max-width: 768px) {
-          .hero-header h1 { font-size: 1.8rem; }
-          .hero-header { padding: 30px 16px; }
-        }
-
-        /* Cards */
-        .card {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 20px;
-          margin-bottom: 20px;
-          transition: all 0.3s ease;
-        }
-
-        .card:hover {
-          border-color: var(--blue);
-          box-shadow: 0 4px 12px rgba(59,130,246,0.1);
-        }
-
-        .card-title {
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        /* Styled Select */
-        .styled-select {
-          background: var(--bg);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 12px 16px;
-          width: 100%;
-          font-size: 14px;
-          color: var(--text);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          appearance: none;
-          background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-          background-repeat: no-repeat;
-          background-position: right 16px center;
-        }
-
-        .styled-select:focus {
-          outline: none;
-          border-color: var(--blue);
-          box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
-        }
-
-        /* Worker Grid untuk List Worker */
-        .worker-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 12px;
-          max-height: 300px;
-          overflow-y: auto;
-          padding: 4px;
-        }
-        
-        .worker-card {
-          background: linear-gradient(135deg, var(--card), var(--bg));
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 12px 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          transition: all 0.2s ease;
-          cursor: pointer;
-          width: calc(33.33% - 8px);
-          min-width: 180px;
-          flex: 1 0 auto;
-        }
-        
-        .worker-card:hover {
-          border-color: var(--blue);
-          transform: translateY(-2px);
-          background: rgba(59,130,246,0.1);
-        }
-        
-        .worker-card.selected {
-          border-color: var(--blue);
-          background: rgba(59,130,246,0.15);
-          box-shadow: 0 0 0 1px var(--blue);
-        }
-        
-        .worker-icon {
-          width: 36px;
-          height: 36px;
-          background: linear-gradient(135deg, var(--blue), var(--purple));
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-        }
-        
-        .worker-info {
-          flex: 1;
-        }
-        
-        .worker-name {
-          font-weight: 600;
-          font-size: 14px;
-          font-family: monospace;
-          word-break: break-all;
-        }
-        
-        .worker-status {
-          font-size: 10px;
-          color: var(--green);
-          margin-top: 4px;
-        }
-        
-        .delete-worker-btn {
-          background: transparent;
-          border: none;
-          color: var(--red);
-          cursor: pointer;
-          padding: 6px;
-          border-radius: 6px;
-          transition: all 0.2s;
-          font-size: 14px;
-        }
-        
-        .delete-worker-btn:hover {
-          background: rgba(239,68,68,0.2);
-          transform: scale(1.05);
-        }
-        
-        .section-label {
-          font-size: 11px;
-          color: var(--text-secondary);
-          margin-bottom: 8px;
-          letter-spacing: 1px;
-          font-weight: 600;
-        }
-        
-        .empty-workers {
-          text-align: center;
-          padding: 40px;
-          color: var(--text-secondary);
-          background: var(--bg);
-          border-radius: 12px;
-          border: 1px dashed var(--border);
-        }
-
-        /* Forms */
-        input, select, textarea {
-          background: var(--bg);
-          color: var(--text);
-          border: 1px solid var(--border);
-          padding: 10px 12px;
-          border-radius: 8px;
-          width: 100%;
-          box-sizing: border-box;
-          margin-bottom: 12px;
-          font-size: 14px;
-          transition: all 0.2s ease;
-        }
-
-        input:focus, select:focus, textarea:focus {
-          outline: none;
-          border-color: var(--blue);
-          box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
-        }
-
-        /* Buttons */
-        button {
-          padding: 10px 16px;
-          border-radius: 8px;
-          border: none;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 13px;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        button:active {
-          transform: scale(0.98);
-        }
-
-        .btn-blue { background: var(--blue); color: #fff; }
-        .btn-blue:hover { background: var(--blue-dark); }
-        .btn-green { background: var(--green); color: #fff; }
-        .btn-green:hover { background: #059669; }
-        .btn-red { background: var(--red); color: #fff; }
-        .btn-red:hover { background: #dc2626; }
-        .btn-orange { background: var(--orange); color: #fff; }
-        .btn-orange:hover { background: #d97706; }
-        .btn-purple { background: var(--purple); color: #fff; }
-        .btn-purple:hover { background: #7c3aed; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
-
-        .flex { display: flex; gap: 10px; flex-wrap: wrap; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-        /* Editor */
-        .editor-container {
-          position: relative;
-          min-height: 400px;
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          overflow: hidden;
-          background: #1a1d24;
-        }
-        
-        #editor, #highlighting {
-          margin: 0;
-          padding: 16px;
-          width: 100%;
-          height: 100%;
-          position: absolute;
-          top: 0;
-          left: 0;
-          tab-size: 2;
-          box-sizing: border-box;
-          font-family: 'Fira Code', 'Courier New', monospace;
-          font-size: 13px;
-          line-height: 1.5;
-          overflow: auto;
-          white-space: pre;
-        }
-        
-        #editor {
-          color: transparent;
-          background: transparent;
-          caret-color: white;
-          z-index: 1;
-          resize: none;
-          outline: none;
-          -webkit-text-fill-color: transparent;
-        }
-        
-        #highlighting {
-          z-index: 0;
-          pointer-events: none;
-        }
-
-        /* Status */
-        .status-toast {
-          position: fixed;
-          bottom: 20px;
-          right: 20px;
-          background: var(--card);
-          border-left: 3px solid var(--green);
-          padding: 12px 16px;
-          border-radius: 8px;
-          display: none;
-          z-index: 1000;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          max-width: 350px;
-        }
-
-        .status-toast.error {
-          border-left-color: var(--red);
-        }
-
-        .domain-item {
-          background: var(--bg);
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 8px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        @media (max-width: 768px) {
-          .grid-2 { grid-template-columns: 1fr; }
-          .main-content.shifted { margin-left: 0; }
-          .worker-card { width: calc(50% - 6px); min-width: 140px; }
-        }
-        
-        @media (max-width: 480px) {
-          .worker-card { width: 100%; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="loading-bar" id="loadingBar"></div>
-      
-      <div class="menu-btn" onclick="toggleSidebar()">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-
-      <div class="sidebar" id="sidebar">
-        <div class="sidebar-content">
-          <div class="sidebar-section">
-            <div class="sidebar-section-title">Akun Cloudflare</div>
-            <select id="accSelector" onchange="switchAccount()" style="margin-bottom: 12px;"></select>
-            <div id="addAccForm" class="hidden" style="display:none;">
-              <input id="accEmail" type="email" placeholder="Email Akun Cloudflare">
-              <input id="accKey" type="password" placeholder="Global API Key">
-              <div class="flex">
-                <button onclick="saveAccount()" class="btn-green" style="flex:1">Simpan</button>
-                <button onclick="toggleAddForm()" class="btn-outline" style="flex:1">Batal</button>
-              </div>
-            </div>
-            <div class="flex" id="accActionBtns">
-              <button onclick="toggleAddForm()" class="btn-outline" style="flex:1">+ Akun Baru</button>
-              <button onclick="deleteAccount()" class="btn-red" style="flex:1">Hapus Akun</button>
-            </div>
-          </div>
-
-          <div class="sidebar-section">
-            <div class="sidebar-section-title">Custom Domain</div>
-            <select id="customDomainSelect" style="margin-bottom: 12px;" disabled>
-              <option>Pilih Worker dulu</option>
-            </select>
-            <button onclick="loadCustomDomains()" class="btn-purple" id="loadDomainsBtn" disabled style="width:100%; margin-bottom:12px;">📋 Load Domains</button>
-            <div id="domainList" style="max-height: 200px; overflow-y: auto;"></div>
-            <div id="addDomainForm" class="hidden" style="display:none; margin-top: 12px;">
-              <input type="text" id="newDomain" placeholder="contoh: proxy.jamol.web.id" />
-              <select id="zoneSelect" style="margin-bottom: 12px;"></select>
-              <div class="flex">
-                <button onclick="attachCustomDomain()" class="btn-green" style="flex:1">➕ Attach</button>
-                <button onclick="toggleAddDomainForm()" class="btn-outline" style="flex:1">Batal</button>
-              </div>
-            </div>
-            <button onclick="toggleAddDomainForm()" class="btn-outline" id="showAddBtn" style="width:100%;">+ Tambah Domain</button>
-          </div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ Cloudflare Worker Manager Pro ✨</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --neon-glow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      background-attachment: fixed;
+      font-family: 'Poppins', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .navbar-glass {
+      background: rgba(15, 20, 40, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 0.8rem 0;
+    }
+    
+    .navbar-brand {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #fff, #a8b5ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 0.5px;
+    }
+    
+    .navbar-brand i {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .status-badge {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+    }
+    
+    .status-connected {
+      background: linear-gradient(135deg, #00b09b, #96c93d);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 15px rgba(0, 176, 155, 0.6);
+      animation: blinkGreen 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes blinkGreen {
+      0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 5px rgba(0, 176, 155, 0.4);
+      }
+      50% {
+        opacity: 0.85;
+        box-shadow: 0 0 20px rgba(0, 176, 155, 0.8), 0 0 30px rgba(150, 201, 61, 0.4);
+      }
+    }
+    
+    .card-modern {
+      background: rgba(15, 25, 45, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      border-radius: 20px;
+      color: #fff;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+    
+    .card-modern:hover {
+      transform: translateY(-5px);
+      border-color: rgba(102, 126, 234, 0.6);
+      box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
+    }
+    
+    .card-header {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+    }
+    
+    .card-header h5 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    
+    .form-control, .form-select {
+      background: rgba(10, 20, 40, 0.8);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      color: #fff;
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      background: rgba(10, 20, 40, 0.9);
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+      color: #fff;
+    }
+    
+    .form-control::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      border-radius: 12px;
+      padding: 0.6rem 1.5rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      color: white;
+    }
+    
+    .btn-gradient:active {
+      transform: translateY(0);
+    }
+    
+    .btn-outline-info {
+      border-color: rgba(102, 126, 234, 0.5);
+      color: #a8b5ff;
+      border-radius: 12px;
+    }
+    
+    .btn-outline-info:hover {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .worker-item {
+      background: rgba(20, 30, 55, 0.6);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      border-radius: 14px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .worker-item:hover {
+      background: rgba(30, 45, 75, 0.8);
+      border-color: #667eea;
+      transform: translateX(5px);
+    }
+    
+    .worker-url {
+      font-size: 0.75rem;
+      color: #00b09b;
+      word-break: break-all;
+    }
+    
+    .copy-url-btn {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .copy-url-btn:hover {
+      color: #667eea !important;
+      transform: scale(1.1);
+    }
+    
+    .editor-container {
+      position: relative;
+      height: 45vh;
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(10, 20, 35, 0.9);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    #editor, #highlighting {
+      margin: 0;
+      padding: 15px;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      tab-size: 2;
+      box-sizing: border-box;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    #editor {
+      color: transparent;
+      background: transparent !important;
+      caret-color: #667eea;
+      z-index: 1;
+      resize: none;
+      outline: none;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    #highlighting {
+      z-index: 0;
+      pointer-events: none;
+      background: transparent !important;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, #764ba2, #667eea);
+    }
+    
+    .toast-custom {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1050;
+      min-width: 300px;
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateX(-50%) translateY(100px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .mode-option {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(102, 126, 234, 0.3);
+      border-radius: 16px;
+      background: rgba(20, 30, 55, 0.5);
+    }
+    
+    .mode-option:hover {
+      background: rgba(102, 126, 234, 0.2);
+      transform: scale(1.02);
+      border-color: #667eea;
+    }
+    
+    .mode-option.selected {
+      border-color: #00b09b;
+      background: linear-gradient(135deg, rgba(0, 176, 155, 0.2), rgba(150, 201, 61, 0.1));
+      box-shadow: 0 0 20px rgba(0, 176, 155, 0.3);
+    }
+    
+    .domain-item {
+      background: rgba(20, 30, 55, 0.5);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    
+    .domain-item:hover {
+      transform: translateX(5px);
+      background: rgba(30, 45, 75, 0.7);
+      border-color: #667eea;
+    }
+    
+    .file-upload-area {
+      border: 2px dashed rgba(102, 126, 234, 0.4);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(20, 30, 55, 0.5);
+    }
+    
+    .file-upload-area:hover {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+    }
+    
+    .file-upload-area.dragover {
+      border-color: #00b09b;
+      background: rgba(0, 176, 155, 0.1);
+    }
+    
+    .bulk-actions-bar {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(102, 126, 234, 0.4);
+      backdrop-filter: blur(5px);
+    }
+    
+    .offcanvas {
+      background: rgba(15, 20, 40, 0.95);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .config-modal {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .card-modern {
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    
+    .text-muted {
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+    
+    .dropdown-menu-dark {
+      background: rgba(20, 30, 55, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .dropdown-item {
+      color: #e0e0e0;
+    }
+    
+    .dropdown-item:hover {
+      background: rgba(102, 126, 234, 0.3);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-glass fixed-top">
+    <div class="container-fluid px-4">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-outline-info rounded-circle" style="width: 40px; height: 40px;" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarCanvas">
+          <i class="fas fa-user-astronaut"></i>
+        </button>
+        <div>
+          <span class="navbar-brand mb-0 fs-1">
+            <i class="fas fa-cloud-upload-alt me-2"></i>
+            CFM
+          </span>
+          <small class="text-muted d-block" style="font-size: 0.7rem;">Cloudflare Workers Management System</small>
         </div>
       </div>
+      <div class="status-badge">
+        <div class="badge status-connected" id="statusBadge" style="display: none;">
+          <i class="fas fa-plug me-1"></i> 
+          <span id="connectionStatus">Connected</span>
+          <i class="fas fa-circle ms-1" style="font-size: 8px; color: #00ff00;"></i>
+        </div>
+      </div>
+    </div>
+  </nav>
 
-      <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarCanvas" aria-labelledby="sidebarLabel">
+    <div class="offcanvas-header border-bottom" style="border-color: rgba(102, 126, 234, 0.3) !important;">
+      <h5 class="offcanvas-title" id="sidebarLabel">
+        <i class="fas fa-cloud me-2"></i>Cloudflare Account
+      </h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-4">
+        <label class="form-label text-light fw-bold">📧 Select Account:</label>
+        <select id="accSelectorSidebar" class="form-select" onchange="switchAccountSidebar()"></select>
+      </div>
+      
+      <div id="addAccFormSidebar" class="mb-4" style="display: none;">
+        <input id="accEmailSidebar" type="email" class="form-control mb-2" placeholder="Email Cloudflare">
+        <input id="accKeySidebar" type="password" class="form-control mb-2" placeholder="Global API Key">
+        <div class="d-flex gap-2">
+          <button onclick="saveAccountSidebar()" class="btn btn-gradient flex-grow-1">
+            <i class="fas fa-save me-1"></i> Simpan
+          </button>
+          <button onclick="toggleAddFormSidebar()" class="btn btn-secondary flex-grow-1">Batal</button>
+        </div>
+      </div>
+      
+      <div id="accActionBtnsSidebar">
+        <button onclick="toggleAddFormSidebar()" class="btn btn-outline-info w-100 mb-2">
+          <i class="fas fa-plus me-2"></i>Tambah Akun Baru
+        </button>
+        <button onclick="deleteAccountSidebar()" class="btn btn-outline-danger w-100">
+          <i class="fas fa-trash-alt me-2"></i>Hapus Akun
+        </button>
+      </div>
+      
+      <hr class="my-4" style="border-color: rgba(102, 126, 234, 0.3);">
+      
+      <div class="text-center">
+        <i class="fas fa-shield-alt fa-2x mb-2" style="color: #667eea;"></i>
+        <p class="small text-muted">Secure Connection via Cloudflare API</p>
+      </div>
+    </div>
+  </div>
 
-      <div class="main-content" id="mainContent">
-        <div class="container">
-          <!-- Hero Header -->
-          <div class="hero-header">
-            <h1>⚡ Cloudflare Manager</h1>
-            <p>Kelola Worker & Custom Domain</p>
+  <div class="container mt-3 pt-3" style="margin-top: 100px !important;">
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card card-modern mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-server me-2 text-info"></i>Worker List
+            </h5>
+            <button onclick="fetchList()" class="btn btn-sm btn-gradient">
+              <i class="fas fa-sync-alt me-1"></i> Refresh
+            </button>
           </div>
+          <div class="card-body">
+            <div id="workerListContainer" class="worker-list-scroll" style="max-height: 400px; overflow-y: auto;"></div>
+          </div>
+        </div>
 
-          <!-- LIST WORKER Section - Menggantikan PENGATURAN KARAKTER -->
-          <div class="card">
-            <div class="card-title">
-              📋 LIST WORKER
-              <button onclick="fetchList()" class="btn-blue" style="margin-left: auto; padding: 6px 12px; font-size: 12px;">🔄 Refresh</button>
+        <div class="card card-modern">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-globe me-2 text-success"></i>Custom Domain Manager
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex gap-2 mb-3">
+              <select id="customDomainSelect" class="form-select" disabled>
+                <option>Pilih Worker terlebih dahulu</option>
+              </select>
+              <button onclick="loadCustomDomains()" class="btn btn-gradient" id="loadDomainsBtn" disabled>
+                <i class="fas fa-sync-alt"></i>
+              </button>
             </div>
-            <div id="workerGridContainer" class="worker-grid">
-              <div class="empty-workers">
-                ⚡ Pilih akun Cloudflare terlebih dahulu dari menu samping
+            <div id="domainList" class="domain-list-scroll mb-3" style="max-height: 250px; overflow-y: auto;"></div>
+            
+            <div class="btn-group w-100 mb-3" role="group">
+              <button type="button" id="modeSingleBtn" class="btn btn-outline-info mode-toggle active" onclick="setMode('single')">
+                <i class="fas fa-plus-circle me-1"></i> Single Mode
+              </button>
+              <button type="button" id="modeMultipleBtn" class="btn btn-outline-info mode-toggle" onclick="setMode('multiple')">
+                <i class="fas fa-layer-group me-1"></i> Multiple Mode
+              </button>
+            </div>
+            
+            <div id="singleModeForm">
+              <div id="addDomainForm" style="display: none;">
+                <input type="text" id="newDomain" class="form-control mb-2" placeholder="Contoh: api" />
+                <small class="text-muted mb-2 d-block">⚠️ Masukkan subdomain saja (zone akan otomatis ditambahkan)</small>
+                <select id="zoneSelect" class="form-select mb-2"></select>
+                <div class="d-flex gap-2">
+                  <button onclick="attachCustomDomain()" class="btn btn-gradient flex-grow-1">
+                    <i class="fas fa-link me-1"></i> Attach Domain
+                  </button>
+                  <button onclick="toggleAddDomainForm()" class="btn btn-secondary flex-grow-1">Batal</button>
+                </div>
+              </div>
+              <div style="width: fit-content; margin: 0 auto;">
+                <button onclick="toggleAddDomainForm()" class="btn btn-gradient" id="showAddBtn">
+                  <i class="fas fa-plus-circle me-1"></i> Tambah Custom Domain
+                </button>
               </div>
             </div>
-            <div class="flex" style="margin-top: 16px;">
-              <button onclick="loadSelectedWorker()" class="btn-purple" style="flex:1;">📂 Load Kode Worker</button>
-              <button onclick="deployWorker()" class="btn-green" style="flex:1;">🚀 DEPLOY</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">
-              ✏️ Nama Worker Baru
-            </div>
-            <input type="text" id="newWorkerName" placeholder="Kosongkan jika ingin update worker yang dipilih" />
-            <small style="color: var(--text-secondary);">* Kosongkan jika ingin update worker yang sudah dipilih</small>
-          </div>
-
-          <div class="card">
-            <div class="card-title">
-              🔗 Import Kode dari URL
-            </div>
-            <div class="flex">
-              <input type="text" id="githubUrl" placeholder="https://raw.githubusercontent.com/.../worker.js" style="flex:1;" />
-              <button onclick="importFromUrl()" class="btn-orange">📥 Import</button>
-            </div>
-            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
-              📌 Contoh: 
-              <span onclick="setExampleUrl('https://raw.githubusercontent.com/example/worker.js')" style="color: var(--blue); cursor: pointer;">GitHub Raw</span> | 
-              <span onclick="setExampleUrl('https://r2.lunas.workers.dev/raw/xnxn.js')" style="color: var(--orange); cursor: pointer;">R2</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-title">
-              📝 Editor Kode
-            </div>
-            <div class="editor-container" style="height: 400px;">
-              <textarea id="editor" spellcheck="false" oninput="updateView(); syncScroll();" onscroll="syncScroll();"></textarea>
-              <pre id="highlighting" aria-hidden="true"><code class="language-javascript" id="highlighting-content"></code></pre>
+            
+            <div id="multipleModeForm" style="display: none;">
+              <textarea id="multipleDomains" class="form-control mb-2" rows="3" placeholder="Masukkan multiple subdomain&#10;Contoh:&#10;api&#10;cdn&#10;app"></textarea>
+              <small class="text-muted mb-2 d-block">✅ Pisahkan dengan baris baru atau koma</small>
+              <select id="zoneSelectMultiple" class="form-select mb-2"></select>
+              <div class="d-flex gap-2">
+                <button onclick="attachMultipleDomains()" class="btn btn-gradient flex-grow-1">
+                  <i class="fas fa-layer-group me-1"></i> Attach All
+                </button>
+                <button onclick="clearMultipleInput()" class="btn btn-secondary flex-grow-1">
+                  <i class="fas fa-eraser me-1"></i> Clear
+                </button>
+              </div>
+              <div id="multipleResult" class="mt-3" style="display: none;"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div id="statusToast" class="status-toast"></div>
-
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-      
-      <script>
-        let loadingTimeout;
-        let selectedWorkerName = null;
-        
-        function showLoading() {
-          const loadingBar = document.getElementById('loadingBar');
-          loadingBar.classList.add('active');
-          if (loadingTimeout) clearTimeout(loadingTimeout);
-        }
-        
-        function hideLoading() {
-          const loadingBar = document.getElementById('loadingBar');
-          loadingBar.classList.remove('active');
-        }
-        
-        function toggleSidebar() {
-          const sidebar = document.getElementById('sidebar');
-          const overlay = document.getElementById('overlay');
-          const mainContent = document.getElementById('mainContent');
-          
-          sidebar.classList.toggle('open');
-          overlay.classList.toggle('active');
-          
-          if (sidebar.classList.contains('open')) {
-            mainContent.classList.add('shifted');
-          } else {
-            mainContent.classList.remove('shifted');
-          }
-        }
-        
-        function closeSidebar() {
-          const sidebar = document.getElementById('sidebar');
-          const overlay = document.getElementById('overlay');
-          const mainContent = document.getElementById('mainContent');
-          
-          sidebar.classList.remove('open');
-          overlay.classList.remove('active');
-          mainContent.classList.remove('shifted');
-        }
-        
-        const $ = id => document.getElementById(id);
-        let accounts = JSON.parse(localStorage.getItem('cf_accounts_v2') || '[]');
-        let currentAcc = null;
-        let workersList = [];
-        let currentWorkerDomains = [];
-        let availableZones = [];
-
-        function toggleAddForm() { 
-          const form = $('addAccForm');
-          const btns = $('accActionBtns');
-          if (form.style.display === 'none' || form.style.display === '') {
-            form.style.display = 'block';
-            btns.style.display = 'none';
-          } else {
-            form.style.display = 'none';
-            btns.style.display = 'flex';
-          }
-        }
-
-        function toggleAddDomainForm() {
-          const form = $('addDomainForm');
-          const btn = $('showAddBtn');
-          if (form.style.display === 'none' || form.style.display === '') {
-            form.style.display = 'block';
-            btn.style.display = 'none';
-          } else {
-            form.style.display = 'none';
-            btn.style.display = 'block';
-          }
-        }
-
-        function setExampleUrl(url) {
-          $('githubUrl').value = url;
-        }
-
-        function updateAccSelector() {
-          if(accounts.length === 0) {
-            $('accSelector').innerHTML = '<option value="-1">Belum ada akun</option>';
-            currentAcc = null;
-          } else {
-            $('accSelector').innerHTML = accounts.map((a, i) => \`<option value="\${i}">\${a.email}</option>\`).join('');
-            switchAccount();
-          }
-        }
-
-        function switchAccount() {
-          const idx = $('accSelector').value;
-          if(idx !== "-1" && accounts[idx]) {
-            currentAcc = accounts[idx];
-            fetchList();
-          }
-        }
-
-        function saveAccount() {
-          const email = $('accEmail').value.trim();
-          const key = $('accKey').value.trim();
-          if(!email || !key) return notify("Isi Email dan Global Key!", true);
-          accounts.push({ email, key });
-          localStorage.setItem('cf_accounts_v2', JSON.stringify(accounts));
-          $('accEmail').value = '';
-          $('accKey').value = '';
-          toggleAddForm();
-          updateAccSelector();
-        }
-
-        function deleteAccount() {
-          const idx = $('accSelector').value;
-          if(idx === "-1" || !confirm("Hapus akun ini?")) return;
-          accounts.splice(idx, 1);
-          localStorage.setItem('cf_accounts_v2', JSON.stringify(accounts));
-          updateAccSelector();
-        }
-
-        function renderWorkerGrid() {
-          const container = $('workerGridContainer');
-          if(!workersList || workersList.length === 0) {
-            container.innerHTML = '<div class="empty-workers">📭 Belum ada worker. Buat worker baru dengan mengisi nama dan deploy!</div>';
-            return;
-          }
-          
-          container.innerHTML = workersList.map(worker => \`
-            <div class="worker-card \${selectedWorkerName === worker.id ? 'selected' : ''}" onclick="selectWorker('\${worker.id}')">
-              <div class="worker-icon">⚡</div>
-              <div class="worker-info">
-                <div class="worker-name">\${worker.id}</div>
-                <div class="worker-status">● Active</div>
-              </div>
-              <button class="delete-worker-btn" onclick="event.stopPropagation(); deleteWorker('\${worker.id}')" title="Hapus Worker">🗑️</button>
-            </div>
-          \`).join('');
-        }
-
-        async function fetchList() {
-          if(!currentAcc) {
-            $('workerGridContainer').innerHTML = '<div class="empty-workers">⚡ Pilih akun Cloudflare terlebih dahulu dari menu samping</div>';
-            $('customDomainSelect').disabled = true;
-            $('loadDomainsBtn').disabled = true;
-            return;
-          }
-          
-          showLoading();
-          
-          try {
-            const res = await fetch('/api/list', {
-              headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
-            });
-            const d = await res.json();
-            if(d.success) {
-              workersList = d.result || [];
-              renderWorkerGrid();
-              
-              $('customDomainSelect').disabled = false;
-              $('loadDomainsBtn').disabled = false;
-              $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>' + 
-                workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
-            } else {
-              throw new Error(d.errors?.[0]?.message || "Gagal load");
-            }
-          } catch(e) { 
-            notify(e.message, true);
-            $('workerGridContainer').innerHTML = '<div class="empty-workers">❌ Gagal memuat worker: ' + e.message + '</div>';
-          } finally {
-            hideLoading();
-          }
-        }
-        
-        function selectWorker(workerName) {
-          selectedWorkerName = workerName;
-          renderWorkerGrid();
-          notify(\`✅ Worker "\${workerName}" dipilih\`);
-        }
-        
-        async function loadSelectedWorker() {
-          if(!selectedWorkerName) {
-            notify("Pilih worker terlebih dahulu dengan mengklik card worker!", true);
-            return;
-          }
-          await loadWorker(selectedWorkerName);
-        }
-
-        async function loadCustomDomains() {
-          const workerName = $('customDomainSelect').value;
-          if(!workerName || !currentAcc) {
-            notify("Pilih worker terlebih dahulu!", true);
-            return;
-          }
-          
-          showLoading();
-          notify("Memuat domain...");
-          
-          try {
-            const routesRes = await fetch('/api/get-routes?name=' + encodeURIComponent(workerName), {
-              headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
-            });
-            const routesData = await routesRes.json();
-            
-            const domainsRes = await fetch('/api/get-custom-domains?name=' + encodeURIComponent(workerName), {
-              headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
-            });
-            const domainsData = await domainsRes.json();
-            
-            if(domainsData.success) {
-              availableZones = domainsData.customDomains || [];
-              $('zoneSelect').innerHTML = availableZones.map(z => \`<option value="\${z.zone_id}">\${z.zone_name}</option>\`).join('');
-            }
-            
-            if(routesData.success && routesData.routes) {
-              currentWorkerDomains = routesData.routes;
-              $('domainList').innerHTML = currentWorkerDomains.length === 0 ? 
-                '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Belum ada custom domain</div>' :
-                currentWorkerDomains.map(route => \`
-                  <div class="domain-item">
-                    <div>
-                      <div style="font-family: monospace; color: var(--blue);">🔗 \${route.pattern.replace('/*', '')}</div>
-                      <small style="color: var(--text-secondary);">Zone: \${route.zone_name}</small>
-                    </div>
-                    <span class="delete-domain" onclick="deleteCustomDomain('\${route.zone_id}', '\${route.id}')" style="color: var(--red); cursor: pointer;">🗑️</span>
+      <div class="col-lg-6">
+        <div class="card card-modern">
+          <div class="card-header">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-code me-2 text-warning"></i>Code Editor
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold mb-3">📋 Select Input Method:</label>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div id="modeImportUrl" class="mode-option p-3 rounded text-center" onclick="selectEditorMode('url')">
+                    <i class="fas fa-link fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="fw-bold small">Import from URL</div>
+                    <small class="text-muted">GitHub/Raw</small>
                   </div>
-                \`).join('');
-              notify("✅ Domain berhasil dimuat!");
-            } else {
-              $('domainList').innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Belum ada custom domain</div>';
-            }
-          } catch(e) {
-            notify("❌ Gagal load domain: " + e.message, true);
-          } finally {
-            hideLoading();
+                </div>
+                <div class="col-6">
+                  <div id="modeImportFile" class="mode-option p-3 rounded text-center" onclick="selectEditorMode('file')">
+                    <i class="fas fa-file-upload fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="fw-bold small">Upload File</div>
+                    <small class="text-muted">From Computer</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div id="modeManual" class="mode-option p-3 rounded text-center" onclick="selectEditorMode('manual')">
+                    <i class="fas fa-edit fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="fw-bold small">Manual Edit</div>
+                    <small class="text-muted">Write Code</small>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div id="modeUpdate" class="mode-option p-3 rounded text-center" onclick="selectEditorMode('update')">
+                    <i class="fas fa-sync-alt fa-2x mb-2" style="color: #667eea;"></i>
+                    <div class="fw-bold small">Update Worker</div>
+                    <small class="text-muted">From Existing</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="editorPanel" style="display: none;">
+              <div id="panelImportUrl" class="editor-mode-card mb-3" style="display: none;">
+                <label class="form-label">🔗 Worker Code URL:</label>
+                <div class="input-group">
+                  <input type="text" id="githubUrl" class="form-control" placeholder="https://raw.githubusercontent.com/.../worker.js" />
+                  <button onclick="importFromUrl()" class="btn btn-gradient">
+                    <i class="fas fa-download me-1"></i> Import
+                  </button>
+                </div>
+                <div class="import-examples mt-2 small">
+                  <span class="text-muted">📌 Examples:</span>
+                  <span onclick="setExampleUrl('https://raw.githubusercontent.com/example/worker.js')" class="text-info" style="cursor: pointer;">GitHub Raw</span>
+                </div>
+              </div>
+
+              <div id="panelImportFile" class="editor-mode-card mb-3" style="display: none;">
+                <label class="form-label">📁 Select File:</label>
+                <div id="fileUploadArea" class="file-upload-area" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
+                  <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                  <p class="mb-1">Click or drag & drop file here</p>
+                  <small class="text-muted">Support: .js, .txt, .mjs</small>
+                  <input type="file" id="fileInput" style="display: none;" accept=".js,.txt,.mjs,.cjs" onchange="handleFileSelect(event)" />
+                </div>
+              </div>
+
+              <div id="panelManual" class="editor-mode-card mb-3" style="display: none;">
+                <div class="alert alert-info bg-info bg-opacity-10 border-info text-white small">
+                  <i class="fas fa-info-circle me-1"></i> Edit worker code directly in the editor below
+                </div>
+              </div>
+
+              <div id="panelUpdate" class="editor-mode-card mb-3" style="display: none;">
+                <label class="form-label">📋 Select Worker to Update:</label>
+                <div class="d-flex gap-2 mb-2">
+                  <select id="updateWorkerSelect" class="form-select flex-grow-1">
+                    <option value="">Pilih Worker...</option>
+                  </select>
+                  <button onclick="loadWorkerToEditor()" class="btn btn-gradient">
+                    <i class="fas fa-folder-open me-1"></i> Load
+                  </button>
+                </div>
+                <div class="d-flex gap-2">
+                  <button onclick="copyCodeToClipboard()" class="btn btn-outline-info flex-grow-1" id="copyCodeBtn" disabled>
+                    <i class="fas fa-copy me-1"></i> Copy
+                  </button>
+                  <button onclick="downloadCode()" class="btn btn-outline-info flex-grow-1" id="downloadCodeBtn" disabled>
+                    <i class="fas fa-download me-1"></i> Download
+                  </button>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">✏️ Worker Name:</label>
+                <input type="text" id="newWorkerName" class="form-control" placeholder="contoh: my-worker" />
+                <small class="text-muted">* Isi untuk deploy baru, kosongkan jika update worker yang dipilih</small>
+              </div>
+
+              <div class="editor-container">
+                <textarea id="editor" spellcheck="false" oninput="updateView(); syncScroll();" onscroll="syncScroll();"></textarea>
+                <pre id="highlighting" aria-hidden="true"><code class="language-javascript" id="highlighting-content"></code></pre>
+              </div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button onclick="deployWorker()" class="btn btn-gradient w-100">
+                  <i class="fas fa-cloud-upload-alt me-2"></i> DEPLOY / UPDATE WORKER
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-custom" id="toastNotification" style="display: none; z-index: 9999;">
+    <div class="toast show bg-dark bg-opacity-90 text-white border-secondary d-inline-block w-auto" role="alert">
+      <div class="toast-header bg-dark text-white border-bottom-0" id="toastHeader">
+        <i class="fas fa-bell me-2"></i>
+        <strong class="me-auto">Notification</strong>
+        <button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>
+      </div>
+      <div class="toast-body" id="toastMessage"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  
+  <script>
+    const $ = id => document.getElementById(id);
+    let accounts = JSON.parse(localStorage.getItem('cf_accounts_v2') || '[]');
+    let currentAcc = null;
+    let workersList = [];
+    let currentWorkerDomains = [];
+    let availableZones = [];
+    let toastTimeout;
+    let currentMode = 'single';
+    let currentEditorMode = null;
+    let currentLoadedWorkerName = null;
+    let selectedWorkers = new Set();
+
+    function showToast(message, isError = false) {
+      const toast = $('toastNotification');
+      const header = $('toastHeader');
+      const msgElement = $('toastMessage');
+      
+      if (toastTimeout) clearTimeout(toastTimeout);
+      
+      if (isError) {
+        header.innerHTML = \`
+          <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+          <strong class="me-auto text-danger">Error</strong>
+          <button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>
+        \`;
+      } else {
+        header.innerHTML = \`
+          <i class="fas fa-check-circle me-2 text-success"></i>
+          <strong class="me-auto text-success">Success</strong>
+          <button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>
+        \`;
+      }
+      
+      msgElement.textContent = message;
+      toast.style.display = 'block';
+      
+      toastTimeout = setTimeout(() => hideToast(), 5000);
+    }
+    
+    function hideToast() {
+      const toast = $('toastNotification');
+      toast.style.display = 'none';
+      if (toastTimeout) clearTimeout(toastTimeout);
+    }
+
+    function notify(msg, err = false) {
+      showToast(msg, err);
+    }
+    
+    async function copyToClipboard(text, successMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        notify(successMsg || \`✅ URL berhasil dicopy: \${text}\`);
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        notify(successMsg || \`✅ URL berhasil dicopy: \${text}\`);
+      }
+    }
+
+    function updateSelectionUI() {
+      const selectionBar = document.getElementById('selectionBar');
+      const selectedCount = selectedWorkers.size;
+      
+      if (selectedCount > 0) {
+        if (!selectionBar) {
+          const bar = document.createElement('div');
+          bar.id = 'selectionBar';
+          bar.className = 'bulk-actions-bar d-flex justify-content-between align-items-center';
+          bar.innerHTML = \`
+            <div>
+              <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox me-2" onchange="toggleSelectAll()">
+              <label class="small">Select All</label>
+            </div>
+            <div>
+              <span class="me-3"><strong id="selectedCountDisplay">\${selectedCount}</strong> selected</span>
+              <button class="btn btn-sm btn-danger" onclick="bulkDeleteWorkers()">
+                <i class="fas fa-trash-alt me-1"></i> Delete Selected
+              </button>
+              <button class="btn btn-sm btn-secondary ms-2" onclick="clearSelection()">
+                <i class="fas fa-times me-1"></i> Close
+              </button>
+            </div>
+          \`;
+          const container = $('workerListContainer');
+          container.parentNode.insertBefore(bar, container);
+        } else {
+          const countDisplay = document.getElementById('selectedCountDisplay');
+          if (countDisplay) countDisplay.innerText = selectedCount;
+          const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = (selectedCount === workersList.length && workersList.length > 0);
           }
         }
+      } else {
+        if (selectionBar) selectionBar.remove();
+      }
+    }
+    
+    function toggleSelectAll() {
+      const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+      if (selectAllCheckbox.checked) {
+        workersList.forEach(w => selectedWorkers.add(w.id));
+      } else {
+        selectedWorkers.clear();
+      }
+      updateSelectionUI();
+      renderWorkerList();
+    }
+    
+    function toggleWorkerSelection(workerId, checked) {
+      if (checked) {
+        selectedWorkers.add(workerId);
+      } else {
+        selectedWorkers.delete(workerId);
+      }
+      updateSelectionUI();
+      renderWorkerList();
+    }
+    
+    function clearSelection() {
+      selectedWorkers.clear();
+      updateSelectionUI();
+      renderWorkerList();
+    }
+    
+    async function bulkDeleteWorkers() {
+      if (selectedWorkers.size === 0) {
+        notify("Tidak ada worker yang dipilih!", true);
+        return;
+      }
+      
+      const workerNames = Array.from(selectedWorkers);
+      if (!confirm(\`Yakin ingin menghapus \${workerNames.length} worker?\\n\\n\${workerNames.join('\\n')}\`)) return;
+      
+      notify(\`Menghapus \${workerNames.length} worker...\`);
+      
+      try {
+        const res = await fetch('/api/delete-bulk', {
+          method: 'POST',
+          headers: {
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ names: workerNames })
+        });
+        const result = await res.json();
         
-        async function attachCustomDomain() {
-          const workerName = $('customDomainSelect').value;
-          const domain = $('newDomain').value.trim();
-          const zoneId = $('zoneSelect').value;
-          
-          if(!workerName) {
-            notify("Pilih worker terlebih dahulu!", true);
-            return;
+        if (result.success) {
+          let message = \`✅ Selesai! \${result.successCount} dari \${result.total} worker berhasil dihapus.\`;
+          if (result.failedCount > 0) {
+            const failed = result.results.filter(r => !r.success).map(r => r.name).join(', ');
+            message += \`\\n❌ Gagal: \${failed}\`;
           }
-          if(!domain) {
-            notify("Masukkan domain!", true);
-            return;
-          }
-          if(!zoneId) {
-            notify("Pilih zone!", true);
-            return;
-          }
-          
-          showLoading();
-          notify(\`Mengattach domain \${domain} ke \${workerName}...\`);
-          
-          try {
-            const res = await fetch('/api/attach-domain', {
-              method: 'POST',
-              headers: {
-                'X-Auth-Email': currentAcc.email,
-                'X-Auth-Key': currentAcc.key,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ workerName, domain, zoneId })
-            });
-            const d = await res.json();
-            if(d.success) {
-              notify(\`✅ \${d.message}\`);
-              $('newDomain').value = '';
-              toggleAddDomainForm();
-              loadCustomDomains();
-            } else {
-              notify("❌ Gagal: " + (d.message || d.error), true);
-            }
-          } catch(e) {
-            notify("❌ Error: " + e.message, true);
-          } finally {
-            hideLoading();
-          }
+          notify(message, result.failedCount > 0);
+          selectedWorkers.clear();
+          fetchList();
+        } else {
+          throw new Error(result.error || "Gagal menghapus worker");
         }
+      } catch(e) {
+        notify("❌ Gagal: " + e.message, true);
+      }
+    }
+    
+    function renderWorkerList() {
+      if (workersList.length === 0) {
+        $('workerListContainer').innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada worker</div>';
+        return;
+      }
+      
+      $('workerListContainer').innerHTML = workersList.map(w => {
+        const workerUrl = w.url || \`https://\${w.id}.workers.dev\`;
+        return \`
+          <div class="worker-item p-3 mb-2">
+            <div class="d-flex align-items-start">
+              <input type="checkbox" class="worker-checkbox me-3 mt-1" 
+                     data-worker-id="\${w.id}"
+                     \${selectedWorkers.has(w.id) ? 'checked' : ''}
+                     onchange="toggleWorkerSelection('\${w.id}', this.checked)">
+              <div class="flex-grow-1">
+                <div class="fw-bold">
+                  <i class="fas fa-code text-info me-2"></i>\${w.id}
+                </div>
+                <div class="worker-url mt-1">
+                  <i class="fas fa-link me-1" style="font-size: 10px;"></i>
+                  <span id="url-\${w.id}">\${workerUrl}</span>
+                  <i class="fas fa-copy ms-2 copy-url-btn text-info" style="font-size: 12px; cursor: pointer;" 
+                     onclick="event.stopPropagation(); copyToClipboard('\${workerUrl}', '✅ URL \${w.id} berhasil dicopy!')"></i>
+                </div>
+                <div class="small text-muted mt-1">
+                  <i class="fas fa-envelope me-1"></i>\${currentAcc.email}
+                </div>
+              </div>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-outline-info rounded-circle" style="width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                  <li><a class="dropdown-item" href="#" onclick="viewConfig('\${w.id}')">
+                    <i class="fas fa-eye me-2"></i> View Config
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger" href="#" onclick="deleteSingleWorker('\${w.id}')">
+                    <i class="fas fa-trash me-2"></i> Delete
+                  </a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        \`;
+      }).join('');
+    }
+    
+    async function deleteSingleWorker(workerName) {
+      if (!confirm(\`Yakin ingin menghapus worker "\${workerName}"?\`)) return;
+      
+      notify(\`Menghapus \${workerName}...\`);
+      try {
+        const res = await fetch('/api/delete', {
+          method: 'DELETE',
+          headers: {
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: workerName })
+        });
+        const d = await res.json();
+        if (d.success) {
+          notify(\`✅ Worker "\${workerName}" berhasil dihapus!\`);
+          selectedWorkers.delete(workerName);
+          fetchList();
+          $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>';
+          $('domainList').innerHTML = '';
+          $('updateWorkerSelect').innerHTML = '<option value="">Pilih Worker...</option>';
+          if (currentLoadedWorkerName === workerName) {
+            enableCopyDownloadButtons(false);
+            currentLoadedWorkerName = null;
+          }
+        } else {
+          notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || "Unknown error"), true);
+        }
+      } catch(e) {
+        notify("❌ Error: " + e.message, true);
+      }
+    }
+
+    async function viewConfig(workerName) {
+      if (!currentAcc) {
+        notify("Pilih akun terlebih dahulu!", true);
+        return;
+      }
+      
+      notify(\`Mengambil konfigurasi \${workerName}...\`);
+      
+      try {
+        const res = await fetch('/api/get?name=' + encodeURIComponent(workerName), {
+          headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
+        });
+        const d = await res.json();
         
-        async function deleteCustomDomain(zoneId, routeId) {
-          if(!confirm("Yakin ingin menghapus custom domain ini?")) return;
+        if (d.success) {
+          const code = d.code;
+          const codeLength = code.length;
+          const lines = code.split('\\n').length;
+          const workerUrl = d.url || \`https://\${workerName}.workers.dev\`;
           
-          showLoading();
-          notify("Menghapus domain...");
+          let workerType = 'Standard Worker';
+          let features = [];
           
-          try {
-            const res = await fetch('/api/delete-domain', {
-              method: 'POST',
-              headers: {
-                'X-Auth-Email': currentAcc.email,
-                'X-Auth-Key': currentAcc.key,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ zoneId, routeId })
-            });
-            const d = await res.json();
-            if(d.success) {
-              notify("✅ Domain berhasil dihapus!");
-              loadCustomDomains();
-            } else {
-              notify("❌ Gagal: " + (d.message || d.error), true);
-            }
-          } catch(e) {
-            notify("❌ Error: " + e.message, true);
-          } finally {
-            hideLoading();
+          if (code.includes('export default') && code.includes('fetch')) {
+            workerType = 'ES Modules Worker';
+            features.push('ES Modules');
           }
-        }
-
-        async function deleteWorker(workerName) {
-          if(!confirm(\`Yakin ingin menghapus worker "\${workerName}"?\`)) return;
-          
-          showLoading();
-          notify(\`Menghapus \${workerName}...\`);
-          
-          try {
-            const res = await fetch('/api/delete', {
-              method: 'DELETE',
-              headers: {
-                'X-Auth-Email': currentAcc.email,
-                'X-Auth-Key': currentAcc.key,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ name: workerName })
-            });
-            const d = await res.json();
-            if(d.success) {
-              notify(\`✅ Worker "\${workerName}" berhasil dihapus!\`);
-              if(selectedWorkerName === workerName) {
-                selectedWorkerName = null;
-              }
-              fetchList();
-              $('editor').value = '';
-              updateView();
-              loadCustomDomains();
-            } else {
-              notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || "Unknown error"), true);
-            }
-          } catch(e) {
-            notify("❌ Error: " + e.message, true);
-          } finally {
-            hideLoading();
+          if (code.includes('addEventListener') && code.includes('fetch')) {
+            workerType = 'Service Worker';
+            features.push('Service Worker API');
           }
-        }
-
-        async function importFromUrl() {
-          const url = $('githubUrl').value.trim();
-          if(!url) {
-            notify("Masukkan URL terlebih dahulu!", true);
-            return;
+          if (code.includes('await fetch') || code.includes('.fetch(')) {
+            features.push('HTTP Requests');
+          }
+          if (code.includes('caches') || code.includes('CacheStorage')) {
+            features.push('Cache API');
+          }
+          if (code.includes('KVNamespace') || (code.includes('.get(') && code.includes('.put('))) {
+            features.push('KV Storage');
+          }
+          if (code.includes('HTMLRewriter')) {
+            features.push('HTML Rewriter');
+          }
+          if (code.includes('WebSocket')) {
+            features.push('WebSocket');
           }
           
-          showLoading();
-          notify("Mengambil kode dari URL...");
+          const modalHtml = \`
+            <div class="modal fade" id="configModal" tabindex="-1" style="z-index: 1060;">
+              <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content config-modal text-white">
+                  <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                      <i class="fas fa-cog text-primary"></i> Worker Configuration
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-4">
+                      <h6 class="text-info mb-3"><i class="fas fa-info-circle"></i> Worker Information</h6>
+                      <div class="row">
+                        <div class="col-md-6 mb-2">
+                          <div class="text-muted small">Worker Name</div>
+                          <div><code>\${workerName}</code></div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                          <div class="text-muted small">Account</div>
+                          <div>\${currentAcc.email}</div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                          <div class="text-muted small">Worker URL</div>
+                          <div>
+                            <code class="text-success">\${workerUrl}</code>
+                            <i class="fas fa-copy ms-2 copy-url-btn" style="cursor: pointer;" 
+                               onclick="copyToClipboard('\${workerUrl}', '✅ Worker URL berhasil dicopy!')"></i>
+                          </div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                          <div class="text-muted small">Status</div>
+                          <div><span class="badge bg-success">Active</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <h6 class="text-info mb-3"><i class="fas fa-code"></i> Code Statistics</h6>
+                      <div class="row">
+                        <div class="col-md-4 mb-2">
+                          <div class="text-muted small">File Size</div>
+                          <div>\${(codeLength / 1024).toFixed(2)} KB</div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                          <div class="text-muted small">Lines of Code</div>
+                          <div>\${lines}</div>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                          <div class="text-muted small">Worker Type</div>
+                          <div><span class="badge bg-info">\${workerType}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                      <h6 class="text-info mb-3"><i class="fas fa-puzzle-piece"></i> Features Detected</h6>
+                      <div>
+                        \${features.length > 0 ? features.map(f => \`<span class="badge bg-secondary me-2 mb-2">\${f}</span>\`).join('') : '<span class="text-muted">No specific features detected</span>'}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h6 class="text-info mb-3"><i class="fas fa-link"></i> Custom Domains</h6>
+                      <div id="configDomainsList" class="small">
+                        <span class="text-muted">Loading domains...</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          \`;
           
-          try {
-            const res = await fetch('/api/import', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ importUrl: url })
-            });
-            const d = await res.json();
-            if(d.success) {
-              $('editor').value = d.code;
-              updateView();
-              notify("✅ Kode berhasil diimport dari URL!");
-            } else {
-              throw new Error(d.error || "Gagal mengambil kode");
-            }
-          } catch(e) {
-            notify("❌ Gagal: " + e.message, true);
-          } finally {
-            hideLoading();
+          const existingModal = document.getElementById('configModal');
+          if (existingModal) existingModal.remove();
+          
+          document.body.insertAdjacentHTML('beforeend', modalHtml);
+          
+          loadDomainsForConfig(workerName);
+          
+          const modal = new bootstrap.Modal(document.getElementById('configModal'));
+          modal.show();
+          
+          document.getElementById('configModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+          });
+        } else {
+          throw new Error(d.errors?.[0]?.message || "Gagal ambil konfigurasi");
+        }
+      } catch(e) {
+        notify("❌ Gagal: " + e.message, true);
+      }
+    }
+    
+    async function loadDomainsForConfig(workerName) {
+      try {
+        const res = await fetch('/api/get-custom-domains?name=' + encodeURIComponent(workerName), {
+          headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
+        });
+        const data = await res.json();
+        const container = document.getElementById('configDomainsList');
+        if (container) {
+          if (data.success && data.customDomains && data.customDomains.length > 0) {
+            container.innerHTML = data.customDomains.map(d => 
+              \`<div class="mb-1"><i class="fas fa-globe text-success me-2"></i>\${d.hostname}</div>\`
+            ).join('');
+          } else {
+            container.innerHTML = '<span class="text-muted">No custom domains attached</span>';
           }
         }
+      } catch(e) {
+        const container = document.getElementById('configDomainsList');
+        if (container) {
+          container.innerHTML = '<span class="text-muted">Failed to load domains</span>';
+        }
+      }
+    }
 
-        async function loadWorker(workerName) {
-          if(!workerName || !currentAcc) return notify("Pilih worker terlebih dahulu", true);
+    async function copyCodeToClipboard() {
+      const code = $('editor').value;
+      if (!code) {
+        notify("Tidak ada kode untuk dicopy!", true);
+        return;
+      }
+      
+      try {
+        await navigator.clipboard.writeText(code);
+        notify("✅ Kode berhasil dicopy ke clipboard!");
+      } catch (err) {
+        const textarea = document.createElement('textarea');
+        textarea.value = code;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        notify("✅ Kode berhasil dicopy ke clipboard!");
+      }
+    }
+    
+    function downloadCode() {
+      const code = $('editor').value;
+      if (!code) {
+        notify("Tidak ada kode untuk didownload!", true);
+        return;
+      }
+      
+      const workerName = currentLoadedWorkerName || $('updateWorkerSelect').value || $('newWorkerName').value || 'worker';
+      const filename = \`\${workerName}.js\`;
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      notify(\`✅ Kode berhasil didownload sebagai \${filename}\`);
+    }
+
+    function selectEditorMode(mode) {
+      currentEditorMode = mode;
+      
+      $('panelImportUrl').style.display = 'none';
+      $('panelImportFile').style.display = 'none';
+      $('panelManual').style.display = 'none';
+      $('panelUpdate').style.display = 'none';
+      
+      const modes = ['url', 'file', 'manual', 'update'];
+      modes.forEach(m => {
+        const el = $('mode' + m.charAt(0).toUpperCase() + m.slice(1));
+        if (el) el.classList.remove('selected');
+      });
+      
+      $('editorPanel').style.display = 'block';
+      
+      if (mode === 'url') {
+        $('panelImportUrl').style.display = 'block';
+        $('modeImportUrl').classList.add('selected');
+      } else if (mode === 'file') {
+        $('panelImportFile').style.display = 'block';
+        $('modeImportFile').classList.add('selected');
+      } else if (mode === 'manual') {
+        $('panelManual').style.display = 'block';
+        $('modeManual').classList.add('selected');
+      } else if (mode === 'update') {
+        $('panelUpdate').style.display = 'block';
+        $('modeUpdate').classList.add('selected');
+        updateUpdateWorkerSelect();
+      }
+    }
+    
+    function updateUpdateWorkerSelect() {
+      const select = $('updateWorkerSelect');
+      if (workersList.length > 0) {
+        select.innerHTML = '<option value="">Pilih Worker...</option>' + 
+          workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
+      } else {
+        select.innerHTML = '<option value="">Belum ada worker, buat dulu</option>';
+      }
+    }
+    
+    function enableCopyDownloadButtons(enabled) {
+      const copyBtn = $('copyCodeBtn');
+      const downloadBtn = $('downloadCodeBtn');
+      if (enabled) {
+        copyBtn.disabled = false;
+        downloadBtn.disabled = false;
+      } else {
+        copyBtn.disabled = true;
+        downloadBtn.disabled = true;
+      }
+    }
+    
+    async function loadWorkerToEditor() {
+      const workerName = $('updateWorkerSelect').value;
+      if (!workerName || !currentAcc) {
+        notify("Pilih worker terlebih dahulu!", true);
+        return;
+      }
+      
+      notify("Mengambil kode worker...");
+      try {
+        const res = await fetch('/api/get?name=' + encodeURIComponent(workerName), {
+          headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
+        });
+        const d = await res.json();
+        if (d.success) {
+          $('editor').value = d.code;
+          updateView();
+          $('newWorkerName').value = '';
+          currentLoadedWorkerName = workerName;
+          enableCopyDownloadButtons(true);
+          notify(\`✅ Kode worker "\${workerName}" berhasil dimuat ke editor!\`);
+        } else {
+          throw new Error(d.errors?.[0]?.message || "Gagal ambil kode");
+        }
+      } catch(e) {
+        notify("❌ Gagal ambil kode: " + e.message, true);
+        enableCopyDownloadButtons(false);
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const singleBtn = $('modeSingleBtn');
+      const multipleBtn = $('modeMultipleBtn');
+      const singleForm = $('singleModeForm');
+      const multipleForm = $('multipleModeForm');
+      
+      if (mode === 'single') {
+        singleBtn.classList.add('active');
+        multipleBtn.classList.remove('active');
+        singleForm.style.display = 'block';
+        multipleForm.style.display = 'none';
+      } else {
+        singleBtn.classList.remove('active');
+        multipleBtn.classList.add('active');
+        singleForm.style.display = 'none';
+        multipleForm.style.display = 'block';
+      }
+    }
+    
+    function clearMultipleInput() {
+      $('multipleDomains').value = '';
+      $('multipleResult').style.display = 'none';
+      $('multipleResult').innerHTML = '';
+    }
+    
+    function parseMultipleDomains(input) {
+      let domains = [];
+      let temp = input.replace(/\\n/g, ',');
+      let parts = temp.split(',');
+      
+      for (let part of parts) {
+        let trimmed = part.trim();
+        if (trimmed) {
+          domains.push(trimmed);
+        }
+      }
+      return domains;
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        readFileContent(file);
+        enableCopyDownloadButtons(true);
+      }
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      $('fileUploadArea').classList.add('dragover');
+    }
+
+    function handleDragLeave(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      $('fileUploadArea').classList.remove('dragover');
+    }
+
+    function handleFileDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      $('fileUploadArea').classList.remove('dragover');
+      
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        readFileContent(file);
+        enableCopyDownloadButtons(true);
+      }
+    }
+
+    function readFileContent(file) {
+      const validExtensions = ['.js', '.txt', '.mjs', '.cjs'];
+      const fileName = file.name;
+      const fileExt = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+      
+      if (!validExtensions.includes(fileExt)) {
+        notify(\`File type tidak didukung! Gunakan: \${validExtensions.join(', ')}\`, true);
+        return;
+      }
+      
+      notify(\`Membaca file: \${fileName}\`);
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        $('editor').value = content;
+        updateView();
+        currentLoadedWorkerName = fileName.replace(/\\.[^/.]+$/, "");
+        notify(\`✅ File "\${fileName}" berhasil diimport! (\${(content.length / 1024).toFixed(2)} KB)\`);
+      };
+      reader.onerror = function() {
+        notify("Gagal membaca file!", true);
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleAddFormSidebar() {
+      const form = $('addAccFormSidebar');
+      const btns = $('accActionBtnsSidebar');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btns.style.display = 'none';
+      } else {
+        form.style.display = 'none';
+        btns.style.display = 'block';
+      }
+    }
+    
+    function saveAccountSidebar() {
+      const email = $('accEmailSidebar').value.trim();
+      const key = $('accKeySidebar').value.trim();
+      if(!email || !key) return notify("Isi Email dan Global Key!", true);
+      accounts.push({ email, key });
+      localStorage.setItem('cf_accounts_v2', JSON.stringify(accounts));
+      $('accEmailSidebar').value = '';
+      $('accKeySidebar').value = '';
+      toggleAddFormSidebar();
+      updateAccSelectorSidebar();
+      const sidebarCanvas = bootstrap.Offcanvas.getInstance($('sidebarCanvas'));
+      if (sidebarCanvas) sidebarCanvas.hide();
+    }
+    
+    function deleteAccountSidebar() {
+      const idx = $('accSelectorSidebar').value;
+      if(idx === "-1" || !confirm("Hapus akun ini?")) return;
+      accounts.splice(idx, 1);
+      localStorage.setItem('cf_accounts_v2', JSON.stringify(accounts));
+      updateAccSelectorSidebar();
+    }
+    
+    function switchAccountSidebar() {
+      const idx = $('accSelectorSidebar').value;
+      if(idx !== "-1" && accounts[idx]) {
+        currentAcc = accounts[idx];
+        selectedWorkers.clear();
+        fetchList();
+        $('statusBadge').style.display = 'inline-block';
+        document.getElementById('connectionStatus').innerHTML = 'Connected';
+      } else {
+        $('statusBadge').style.display = 'none';
+      }
+    }
+    
+    function updateAccSelectorSidebar() {
+      if(accounts.length === 0) {
+        $('accSelectorSidebar').innerHTML = '<option value="-1">Belum ada akun</option>';
+        currentAcc = null;
+        $('statusBadge').style.display = 'none';
+      } else {
+        $('accSelectorSidebar').innerHTML = accounts.map((a, i) => \`<option value="\${i}">\${a.email}</option>\`).join('');
+        switchAccountSidebar();
+      }
+    }
+
+    function toggleAddDomainForm() {
+      const form = $('addDomainForm');
+      const btn = $('showAddBtn');
+      if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.style.display = 'none';
+      } else {
+        form.style.display = 'none';
+        btn.style.display = 'block';
+      }
+    }
+
+    function setExampleUrl(url) {
+      $('githubUrl').value = url;
+    }
+
+    async function fetchList() {
+      if(!currentAcc) {
+        $('workerListContainer').innerHTML = '<div class="text-center text-muted py-3">Pilih akun dulu</div>';
+        return;
+      }
+      
+      notify("Memuat daftar worker...");
+      try {
+        const res = await fetch('/api/list', {
+          headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
+        });
+        const d = await res.json();
+        if(d.success) {
+          workersList = d.result || [];
+          selectedWorkers.clear();
+          renderWorkerList();
+          updateSelectionUI();
           
-          showLoading();
-          notify("Mengambil kode...");
+          $('customDomainSelect').disabled = false;
+          $('loadDomainsBtn').disabled = false;
+          $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>' + 
+            workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
           
-          try {
-            const res = await fetch('/api/get?name=' + encodeURIComponent(workerName), {
-              headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
-            });
-            const d = await res.json();
-            if(d.success) {
-              $('editor').value = d.code;
-              updateView();
-              notify("✅ Kode berhasil dimuat!");
-            } else {
-              throw new Error(d.errors?.[0]?.message || "Gagal ambil kode");
-            }
-          } catch(e) { 
-            notify("❌ Gagal ambil kode: " + e.message, true); 
-          } finally {
-            hideLoading();
+          updateUpdateWorkerSelect();
+          notify(\`✅ \${workersList.length} worker ditemukan\`);
+        } else {
+          throw new Error(d.errors?.[0]?.message || "Gagal load");
+        }
+      } catch(e) { 
+        notify(e.message, true);
+        $('workerListContainer').innerHTML = '<div class="text-center text-danger py-3">Gagal memuat worker</div>';
+      }
+    }
+
+    async function loadCustomDomains() {
+      const workerName = $('customDomainSelect').value;
+      if(!workerName || !currentAcc) {
+        notify("Pilih worker terlebih dahulu!", true);
+        return;
+      }
+      
+      notify("Memuat domain...");
+      try {
+        const res = await fetch('/api/get-custom-domains?name=' + encodeURIComponent(workerName), {
+          headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+          availableZones = data.zones || [];
+          const zoneOptions = availableZones.map(z => \`<option value="\${z.zone_id}">\${z.zone_name}</option>\`).join('');
+          $('zoneSelect').innerHTML = zoneOptions;
+          $('zoneSelectMultiple').innerHTML = zoneOptions;
+          
+          currentWorkerDomains = data.customDomains || [];
+          $('domainList').innerHTML = currentWorkerDomains.length === 0 ? 
+            '<div class="text-center text-muted py-3"><i class="fas fa-globe fa-2x mb-2 d-block"></i>Belum ada custom domain</div>' :
+            currentWorkerDomains.map(domain => \`
+              <div class="domain-item p-3 mb-2">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-bold"><i class="fas fa-link text-success me-1"></i> \${domain.hostname}</div>
+                    <div class="small text-success"><i class="fas fa-lock me-1"></i> SSL: Let's Encrypt</div>
+                    <small class="text-muted">Env: \${domain.environment}</small>
+                  </div>
+                  <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteCustomDomain('\${domain.id}')">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </div>
+            \`).join('');
+          notify("✅ Domain berhasil dimuat!");
+        } else {
+          notify("❌ Gagal load domain: " + (data.error || "Unknown error"), true);
+        }
+      } catch(e) {
+        notify("❌ Gagal load domain: " + e.message, true);
+      }
+    }
+    
+    async function attachCustomDomain() {
+      const workerName = $('customDomainSelect').value;
+      let domainInput = $('newDomain').value.trim();
+      const zoneId = $('zoneSelect').value;
+      
+      if(!workerName || !domainInput || !zoneId) return notify("Lengkapi data domain!", true);
+      
+      const selectedZone = availableZones.find(z => z.zone_id === zoneId);
+      if(!selectedZone) return notify("Zone tidak ditemukan!", true);
+      
+      if (!/^[a-zA-Z0-9.-]+$/.test(domainInput)) {
+        notify("Subdomain hanya boleh berisi huruf, angka, titik, dan strip (-)!", true);
+        return;
+      }
+      
+      const fullDomain = \`\${domainInput}.\${selectedZone.zone_name}\`;
+      
+      if(!fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$/)) {
+        notify(\`Domain tidak valid! Pastikan "\${domainInput}" adalah subdomain yang valid.\`, true);
+        return;
+      }
+      
+      notify(\`Mengattach domain \${fullDomain}...\`);
+      try {
+        const res = await fetch('/api/attach-domain', {
+          method: 'POST',
+          headers: {
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ workerName, domain: fullDomain, zoneId })
+        });
+        const d = await res.json();
+        if(d.success) {
+          notify(\`✅ \${d.message}\`);
+          $('newDomain').value = '';
+          toggleAddDomainForm();
+          loadCustomDomains();
+        } else {
+          notify("❌ Gagal: " + (d.message || d.error), true);
+        }
+      } catch(e) {
+        notify("❌ Error: " + e.message, true);
+      }
+    }
+    
+    async function attachMultipleDomains() {
+      const workerName = $('customDomainSelect').value;
+      const domainInput = $('multipleDomains').value.trim();
+      const zoneId = $('zoneSelectMultiple').value;
+      
+      if(!workerName || !domainInput || !zoneId) {
+        notify("Lengkapi data domain!", true);
+        return;
+      }
+      
+      const selectedZone = availableZones.find(z => z.zone_id === zoneId);
+      if(!selectedZone) {
+        notify("Zone tidak ditemukan!", true);
+        return;
+      }
+      
+      const subdomains = parseMultipleDomains(domainInput);
+      
+      if(subdomains.length === 0) {
+        notify("Tidak ada subdomain yang valid!", true);
+        return;
+      }
+      
+      const domains = [];
+      const invalidDomains = [];
+      
+      for (let sub of subdomains) {
+        if (!/^[a-zA-Z0-9.-]+$/.test(sub)) {
+          invalidDomains.push(sub);
+          continue;
+        }
+        const fullDomain = \`\${sub}.\${selectedZone.zone_name}\`;
+        if(fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$/)) {
+          domains.push(fullDomain);
+        } else {
+          invalidDomains.push(sub);
+        }
+      }
+      
+      if(domains.length === 0) {
+        notify("Tidak ada domain yang valid untuk diattach!", true);
+        return;
+      }
+      
+      if(invalidDomains.length > 0) {
+        notify(\`⚠️ \${invalidDomains.length} subdomain tidak valid: \${invalidDomains.join(', ')}\`, true);
+      }
+      
+      notify(\`Mengattach \${domains.length} domain ke worker \${workerName}...\`);
+      
+      try {
+        const res = await fetch('/api/attach-multiple-domains', {
+          method: 'POST',
+          headers: {
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ workerName, domains, zoneId })
+        });
+        const result = await res.json();
+        
+        const resultDiv = $('multipleResult');
+        resultDiv.style.display = 'block';
+        
+        let successHtml = '<div class="mt-2"><strong>Hasil Attach Domain:</strong></div>';
+        successHtml += '<div class="mt-2">';
+        for (let r of result.results) {
+          const statusClass = r.success ? 'text-success' : 'text-danger';
+          const statusIcon = r.success ? '✅' : '❌';
+          successHtml += \`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.3);">
+              <span><code>\${r.domain}</code></span>
+              <span class="\${statusClass}">\${statusIcon} \${r.message}</span>
+            </div>
+          \`;
+        }
+        successHtml += \`</div><div class="mt-2 text-center">Total: \${result.total} | Berhasil: \${result.successCount} | Gagal: \${result.failedCount}</div>\`;
+        resultDiv.innerHTML = successHtml;
+        
+        notify(\`✅ Selesai! \${result.successCount} dari \${result.total} domain berhasil diattach\`, false);
+        loadCustomDomains();
+      } catch(e) {
+        notify("❌ Error: " + e.message, true);
+      }
+    }
+    
+    async function deleteCustomDomain(domainId) {
+      if(!confirm("Yakin ingin menghapus custom domain ini?")) return;
+      
+      notify("Menghapus domain...");
+      try {
+        const res = await fetch('/api/delete-domain', {
+          method: 'POST',
+          headers: {
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ domainId })
+        });
+        const d = await res.json();
+        if(d.success) {
+          notify("✅ Domain berhasil dihapus!");
+          loadCustomDomains();
+        } else {
+          notify("❌ Gagal: " + (d.message || d.error), true);
+        }
+      } catch(e) {
+        notify("❌ Error: " + e.message, true);
+      }
+    }
+
+    async function importFromUrl() {
+      const url = $('githubUrl').value.trim();
+      if(!url) return notify("Masukkan URL!", true);
+      
+      notify("Mengambil kode...");
+      try {
+        const res = await fetch('/api/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ importUrl: url })
+        });
+        const d = await res.json();
+        if(d.success) {
+          $('editor').value = d.code;
+          updateView();
+          enableCopyDownloadButtons(true);
+          notify("✅ Kode berhasil diimport!");
+        } else {
+          throw new Error(d.error || "Gagal mengambil kode");
+        }
+      } catch(e) {
+        notify("❌ Gagal: " + e.message, true);
+        enableCopyDownloadButtons(false);
+      }
+    }
+
+    async function deployWorker() {
+      let workerName = $('newWorkerName').value.trim();
+      const code = $('editor').value;
+      
+      if(!code) return notify("Kode masih kosong!", true);
+      
+      if (!workerName && currentEditorMode === 'update') {
+        workerName = $('updateWorkerSelect').value;
+        if (!workerName) {
+          return notify("Pilih worker dari dropdown update atau isi nama baru!", true);
+        }
+      }
+      
+      if(!workerName) return notify("Isi nama worker baru atau pilih worker yang akan diupdate!", true);
+      
+      notify("Mendeploy ke Cloudflare...");
+      try {
+        const res = await fetch('/api/update', {
+          method: 'POST',
+          headers: { 
+            'X-Auth-Email': currentAcc.email, 
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: workerName, code: code })
+        });
+        const d = await res.json();
+        if(d.success) {
+          const deployUrl = d.subdomain || \`https://\${workerName}.workers.dev\`;
+          notify(\`✅ BERHASIL DI-DEPLOY!\\nWorker: \${workerName}\\nURL: \${deployUrl}\`);
+          fetchList();
+          $('newWorkerName').value = '';
+          currentLoadedWorkerName = workerName;
+          if (currentEditorMode === 'update') {
+            $('updateWorkerSelect').value = '';
           }
+          enableCopyDownloadButtons(true);
+        } else {
+          notify("❌ Gagal: " + (d.errors?.[0]?.message || "Unknown error"), true);
         }
+      } catch(e) { 
+        notify("❌ Network Error: " + e.message, true); 
+      }
+    }
 
-        async function deployWorker() {
-          let workerName = selectedWorkerName;
-          const newName = $('newWorkerName').value.trim();
-          const code = $('editor').value;
-          
-          if(!code) return notify("Kode masih kosong!", true);
-          
-          if(newName) {
-            workerName = newName;
-          }
-          
-          if(!workerName) return notify("Pilih worker dari list atau isi nama worker baru!", true);
-          
-          showLoading();
-          notify("Mendeploy ke Cloudflare...");
-          
-          try {
-            const res = await fetch('/api/update', {
-              method: 'POST',
-              headers: { 
-                'X-Auth-Email': currentAcc.email, 
-                'X-Auth-Key': currentAcc.key,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ name: workerName, code: code })
-            });
-            const d = await res.json();
-            if(d.success) {
-              let msg = "✅ BERHASIL DI-DEPLOY!\\n";
-              msg += "Worker: " + workerName + "\\n";
-              if(d.subdomain) msg += "URL: " + d.subdomain;
-              notify(msg);
-              fetchList();
-              $('newWorkerName').value = '';
-              selectedWorkerName = workerName;
-              setTimeout(() => {
-                if($('customDomainSelect').value === workerName) {
-                  loadCustomDomains();
-                }
-              }, 1000);
-            } else {
-              notify("❌ Gagal: " + (d.errors?.[0]?.message || "Unknown error"), true);
-            }
-          } catch(e) { 
-            notify("❌ Network Error: " + e.message, true); 
-          } finally {
-            hideLoading();
-          }
-        }
+    function updateView() {
+      let code = $('editor').value;
+      if(code && code[code.length-1] == "\\n") code += " ";
+      $('highlighting-content').textContent = code || '';
+      Prism.highlightElement($('highlighting-content'));
+    }
 
-        function updateView() {
-          let code = $('editor').value;
-          if(code && code[code.length-1] == "\\n") code += " ";
-          $('highlighting-content').textContent = code || '';
-          Prism.highlightElement($('highlighting-content'));
-        }
+    function syncScroll() {
+      $('highlighting').scrollTop = $('editor').scrollTop;
+      $('highlighting').scrollLeft = $('editor').scrollLeft;
+    }
 
-        function syncScroll() {
-          $('highlighting').scrollTop = $('editor').scrollTop;
-          $('highlighting').scrollLeft = $('editor').scrollLeft;
-        }
+    updateAccSelectorSidebar();
+    setMode('single');
+    
+    $('editorPanel').style.display = 'none';
+    enableCopyDownloadButtons(false);
 
-        function notify(msg, err=false) {
-          const toast = $("statusToast");
-          toast.className = "status-toast" + (err ? " error" : "");
-          toast.innerText = msg;
-          toast.style.display = "block";
-          
-          setTimeout(() => {
-            toast.style.display = "none";
-          }, 5000);
-        }
-
-        updateAccSelector();
-        $('editor').onkeydown = function(e) {
-          if(e.key == 'Tab') {
-            e.preventDefault();
-            const s = this.selectionStart;
-            this.value = this.value.substring(0, s) + "  " + this.value.substring(this.selectionEnd);
-            this.selectionEnd = s + 2;
-            updateView();
-          }
-        };
-      </script>
-    </body>
-    </html>
+    $('editor').onkeydown = function(e) {
+      if(e.key == 'Tab') {
+        e.preventDefault();
+        const s = this.selectionStart;
+        this.value = this.value.substring(0, s) + "  " + this.value.substring(this.selectionEnd);
+        this.selectionEnd = s + 2;
+        updateView();
+      }
+    };
+  </script>
+</body>
+</html>
     `;
     return new Response(html, { headers: { 'content-type': 'text/html;charset=UTF-8' } });
   },
