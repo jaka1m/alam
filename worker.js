@@ -117,10 +117,59 @@ export default {
           return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 
-        // List Pages Projects
+                // List Pages Projects
         if (url.pathname === '/api/pages/list') {
           const accountId = await getAccountId();
           const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects`, { headers: commonHeaders });
+          const data = await res.json();
+          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Get Pages Domains
+        if (url.pathname === '/api/pages/get-domains') {
+          const projectName = url.searchParams.get("name");
+          const accountId = await getAccountId();
+          const domainsRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains`, { headers: commonHeaders });
+          const domainsData = await domainsRes.json();
+          const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, { headers: commonHeaders });
+          const zonesData = await zonesRes.json();
+          const zones = zonesData.success ? zonesData.result.map(z => ({ zone_id: z.id, zone_name: z.name })) : [];
+          return new Response(JSON.stringify({ success: domainsData.success, result: domainsData.result, zones }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Attach Pages Domain
+        if (url.pathname === '/api/pages/attach-domain') {
+          const { projectName, domain } = await request.json();
+          const accountId = await getAccountId();
+          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains`, {
+            method: 'POST',
+            headers: commonHeaders,
+            body: JSON.stringify({ name: domain })
+          });
+          const data = await res.json();
+          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Delete Pages Domain
+        if (url.pathname === '/api/pages/delete-domain') {
+          const { projectName, domainId } = await request.json();
+          const accountId = await getAccountId();
+          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains/${domainId}`, {
+            method: 'DELETE',
+            headers: commonHeaders
+          });
+          const data = await res.json();
+          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Delete Pages Project
+        if (url.pathname === '/api/pages/delete') {
+          const { name } = await request.json();
+          const accountId = await getAccountId();
+          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${name}`, {
+            method: 'DELETE',
+            headers: commonHeaders
+          });
           const data = await res.json();
           return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
@@ -187,18 +236,6 @@ export default {
           }
         }
 
-        // Get Pages Domains
-        if (url.pathname === '/api/pages/get-domains') {
-          const projectName = url.searchParams.get("name");
-          const accountId = await getAccountId();
-          const domainsRes = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains`, { headers: commonHeaders });
-          const domainsData = await domainsRes.json();
-          const zonesRes = await fetch(`https://api.cloudflare.com/client/v4/zones`, { headers: commonHeaders });
-          const zonesData = await zonesRes.json();
-          const zones = zonesData.success ? zonesData.result.map(z => ({ zone_id: z.id, zone_name: z.name })) : [];
-          return new Response(JSON.stringify({ success: domainsData.success, result: domainsData.result, zones }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-
         // Attach Custom Domain (single)
         if (url.pathname === '/api/attach-domain') {
           const { workerName, domain, zoneId } = await request.json();
@@ -231,43 +268,6 @@ export default {
               headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
           }
-        }
-
-        // Attach Pages Domain
-        if (url.pathname === '/api/pages/attach-domain') {
-          const { projectName, domain } = await request.json();
-          const accountId = await getAccountId();
-          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains`, {
-            method: 'POST',
-            headers: commonHeaders,
-            body: JSON.stringify({ name: domain })
-          });
-          const data = await res.json();
-          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-
-        // Delete Pages Domain
-        if (url.pathname === '/api/pages/delete-domain') {
-          const { projectName, domainId } = await request.json();
-          const accountId = await getAccountId();
-          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${projectName}/domains/${domainId}`, {
-            method: 'DELETE',
-            headers: commonHeaders
-          });
-          const data = await res.json();
-          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-
-        // Delete Pages Project
-        if (url.pathname === '/api/pages/delete') {
-          const { name } = await request.json();
-          const accountId = await getAccountId();
-          const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/${name}`, {
-            method: 'DELETE',
-            headers: commonHeaders
-          });
-          const data = await res.json();
-          return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
 
         // Attach Multiple Custom Domains
@@ -1412,37 +1412,33 @@ export default {
     }
 
     async function deleteSingleWorker(workerName) {
-      const isWorkers = currentListType === "workers";
-      if (!confirm("Yakin ingin menghapus " + (isWorkers ? "worker" : "project") + " \"" + workerName + "\"?")) return;
+      if (!confirm(\`Yakin ingin menghapus worker "\${workerName}"?\`)) return;
 
-      notify("Menghapus " + workerName + "...");
+      notify(\`Menghapus \${workerName}...\`);
       try {
-        const endpoint = isWorkers ? "/api/delete" : "/api/pages/delete";
-        const res = await fetch(endpoint, {
-          method: isWorkers ? "DELETE" : "POST",
+        const res = await fetch('/api/delete', {
+          method: 'DELETE',
           headers: {
-            "X-Auth-Email": currentAcc.email,
-            "X-Auth-Key": currentAcc.key,
-            "Content-Type": "application/json"
+            'X-Auth-Email': currentAcc.email,
+            'X-Auth-Key': currentAcc.key,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({ name: workerName })
         });
         const d = await res.json();
         if (d.success) {
-          notify("✅ " + (isWorkers ? "Worker" : "Project") + " \"" + workerName + "\" berhasil dihapus!");
+          notify(\`✅ Worker "\${workerName}" berhasil dihapus!\`);
           selectedWorkers.delete(workerName);
           fetchList();
-          $("customDomainSelect").innerHTML = "<option value=\"\">Pilih " + (isWorkers ? "Worker" : "Project") + "</option>";
-          $("domainList").innerHTML = "";
-          if (isWorkers) {
-            $("updateWorkerSelect").innerHTML = "<option value=\"\">Pilih Worker...</option>";
-            if (currentLoadedWorkerName === workerName) {
-              enableCopyDownloadButtons(false);
-              currentLoadedWorkerName = null;
-            }
+          $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>';
+          $('domainList').innerHTML = '';
+          $('updateWorkerSelect').innerHTML = '<option value="">Pilih Worker...</option>';
+          if (currentLoadedWorkerName === workerName) {
+            enableCopyDownloadButtons(false);
+            currentLoadedWorkerName = null;
           }
         } else {
-          notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || d.error || "Unknown error"), true);
+          notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || "Unknown error"), true);
         }
       } catch(e) {
         notify("❌ Error: " + e.message, true);
@@ -2136,11 +2132,11 @@ export default {
       try {
         const isWorkers = currentListType === 'workers';
         const endpoint = isWorkers ? '/api/delete-domain' : '/api/pages/delete-domain';
-        const workerName = $('customDomainSelect').value;
-        const body = isWorkers ? { domainId } : { projectName: workerName, domainId };
+        const name = $('customDomainSelect').value;
+        const body = isWorkers ? { domainId } : { projectName: name, domainId };
 
         const res = await fetch(endpoint, {
-          method: 'POST',
+          method: isWorkers ? 'POST' : 'DELETE',
           headers: {
             'X-Auth-Email': currentAcc.email,
             'X-Auth-Key': currentAcc.key,
