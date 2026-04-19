@@ -1212,17 +1212,13 @@ export default {
       if (toastTimeout) clearTimeout(toastTimeout);
 
       if (isError) {
-        header.innerHTML = \`
-          <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
-          <strong class="me-auto text-danger">Error</strong>
-          <button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>
-        \`;
+        header.innerHTML = '<i class="fas fa-exclamation-triangle me-2 text-danger"></i>' +
+          '<strong class="me-auto text-danger">Error</strong>' +
+          '<button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>';
       } else {
-        header.innerHTML = \`
-          <i class="fas fa-check-circle me-2 text-success"></i>
-          <strong class="me-auto text-success">Success</strong>
-          <button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>
-        \`;
+        header.innerHTML = '<i class="fas fa-check-circle me-2 text-success"></i>' +
+          '<strong class="me-auto text-success">Success</strong>' +
+          '<button type="button" class="btn-close btn-close-white" onclick="hideToast()"></button>';
       }
 
       msgElement.textContent = message;
@@ -1244,7 +1240,7 @@ export default {
     async function copyToClipboard(text, successMsg) {
       try {
         await navigator.clipboard.writeText(text);
-        notify(successMsg || \`✅ URL berhasil dicopy: \${text}\`);
+        notify(successMsg || '✅ URL berhasil dicopy: ' + text);
       } catch (err) {
         const textarea = document.createElement('textarea');
         textarea.value = text;
@@ -1252,7 +1248,7 @@ export default {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        notify(successMsg || \`✅ URL berhasil dicopy: \${text}\`);
+        notify(successMsg || '✅ URL berhasil dicopy: ' + text);
       }
     }
 
@@ -1265,21 +1261,19 @@ export default {
           const bar = document.createElement('div');
           bar.id = 'selectionBar';
           bar.className = 'bulk-actions-bar d-flex justify-content-between align-items-center';
-          bar.innerHTML = \`
-            <div>
-              <input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox me-2" onchange="toggleSelectAll()">
-              <label class="small">Select All</label>
-            </div>
-            <div>
-              <span class="me-3"><strong id="selectedCountDisplay">\${selectedCount}</strong> selected</span>
-              <button class="btn btn-sm btn-danger" onclick="bulkDeleteWorkers()">
-                <i class="fas fa-trash-alt me-1"></i> Delete Selected
-              </button>
-              <button class="btn btn-sm btn-secondary ms-2" onclick="clearSelection()">
-                <i class="fas fa-times me-1"></i> Close
-              </button>
-            </div>
-          \`;
+          bar.innerHTML = '<div>' +
+              '<input type="checkbox" id="selectAllCheckbox" class="select-all-checkbox me-2" onchange="toggleSelectAll()">' +
+              '<label class="small">Select All</label>' +
+            '</div>' +
+            '<div>' +
+              '<span class="me-3"><strong id="selectedCountDisplay">' + selectedCount + '</strong> selected</span>' +
+              '<button class="btn btn-sm btn-danger" onclick="bulkDeleteWorkers()">' +
+                '<i class="fas fa-trash-alt me-1"></i> Delete Selected' +
+              '</button>' +
+              '<button class="btn btn-sm btn-secondary ms-2" onclick="clearSelection()">' +
+                '<i class="fas fa-times me-1"></i> Close' +
+              '</button>' +
+            '</div>';
           const container = $('workerListContainer');
           container.parentNode.insertBefore(bar, container);
         } else {
@@ -1323,15 +1317,19 @@ export default {
     }
 
     async function bulkDeleteWorkers() {
+      if (currentListType === 'pages') {
+          notify("Bulk delete belum didukung untuk Pages", true);
+          return;
+      }
       if (selectedWorkers.size === 0) {
         notify("Tidak ada worker yang dipilih!", true);
         return;
       }
 
       const workerNames = Array.from(selectedWorkers);
-      if (!confirm(\`Yakin ingin menghapus \${workerNames.length} worker?\\n\\n\${workerNames.join('\\n')}\`)) return;
+      if (!confirm('Yakin ingin menghapus ' + workerNames.length + ' worker?\n\n' + workerNames.join('\n'))) return;
 
-      notify(\`Menghapus \${workerNames.length} worker...\`);
+      notify('Menghapus ' + workerNames.length + ' worker...');
 
       try {
         const res = await fetch('/api/delete-bulk', {
@@ -1346,10 +1344,10 @@ export default {
         const result = await res.json();
 
         if (result.success) {
-          let message = \`✅ Selesai! \${result.successCount} dari \${result.total} worker berhasil dihapus.\`;
+          let message = '✅ Selesai! ' + result.successCount + ' dari ' + result.total + ' worker berhasil dihapus.';
           if (result.failedCount > 0) {
             const failed = result.results.filter(r => !r.success).map(r => r.name).join(', ');
-            message += \`\\n❌ Gagal: \${failed}\`;
+            message += '\n❌ Gagal: ' + failed;
           }
           notify(message, result.failedCount > 0);
           selectedWorkers.clear();
@@ -1364,59 +1362,67 @@ export default {
 
     function renderWorkerList() {
       if (workersList.length === 0) {
-        $('workerListContainer').innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada worker</div>';
+        $('workerListContainer').innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada data</div>';
         return;
       }
 
+      const isWorkers = currentListType === 'workers';
+
       $('workerListContainer').innerHTML = workersList.map(w => {
-        const workerUrl = w.url || \`https://\${w.id}.workers.dev\`;
-        return \`
-          <div class="worker-item p-3 mb-2">
-            <div class="d-flex align-items-start">
-              <input type="checkbox" class="worker-checkbox me-3 mt-1"
-                     data-worker-id="\${w.id}"
-                     \${selectedWorkers.has(w.id) ? 'checked' : ''}
-                     onchange="toggleWorkerSelection('\${w.id}', this.checked)">
-              <div class="flex-grow-1">
-                <div class="fw-bold">
-                  <i class="fas fa-code text-info me-2"></i>\${w.id}
-                </div>
-                <div class="worker-url mt-1">
-                  <i class="fas fa-link me-1" style="font-size: 10px;"></i>
-                  <span id="url-\${w.id}">\${workerUrl}</span>
-                  <i class="fas fa-copy ms-2 copy-url-btn text-info" style="font-size: 12px; cursor: pointer;"
-                     onclick="event.stopPropagation(); copyToClipboard('\${workerUrl}', '✅ URL \${w.id} berhasil dicopy!')"></i>
-                </div>
-                <div class="small text-muted mt-1">
-                  <i class="fas fa-envelope me-1"></i>\${currentAcc.email}
-                </div>
-              </div>
-              <div class="dropdown">
-                <button class="btn btn-sm btn-outline-info rounded-circle" style="width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown">
-                  <i class="fas fa-ellipsis-v"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-dark">
-                  <li><a class="dropdown-item" href="#" onclick="viewConfig('\${w.id}')">
-                    <i class="fas fa-eye me-2"></i> View Config
-                  </a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item text-danger" href="#" onclick="deleteSingleWorker('\${w.id}')">
-                    <i class="fas fa-trash me-2"></i> Delete
-                  </a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        \`;
+        const workerId = w.id;
+        const workerUrl = w.url || (isWorkers ? 'https://' + workerId + '.workers.dev' : 'https://' + workerId);
+
+        let actionsHtml = '<li><a class="dropdown-item text-danger" href="#" onclick="deleteSingleWorker(\'' + workerId + '\')">' +
+                  '<i class="fas fa-trash me-2"></i> Delete' +
+                '</a></li>';
+
+        if (isWorkers) {
+            actionsHtml = '<li><a class="dropdown-item" href="#" onclick="viewConfig(\'' + workerId + '\')">' +
+                    '<i class="fas fa-eye me-2"></i> View Config' +
+                  '</a></li>' +
+                  '<li><hr class="dropdown-divider"></li>' + actionsHtml;
+        }
+
+        return '<div class="worker-item p-3 mb-2">' +
+            '<div class="d-flex align-items-start">' +
+              '<input type="checkbox" class="worker-checkbox me-3 mt-1" ' +
+                     'data-worker-id="' + workerId + '" ' +
+                     (selectedWorkers.has(workerId) ? 'checked' : '') +
+                     ' onchange="toggleWorkerSelection(\'' + workerId + '\', this.checked)">' +
+              '<div class="flex-grow-1">' +
+                '<div class="fw-bold">' +
+                  '<i class="fas fa-code text-info me-2"></i>' + workerId +
+                '</div>' +
+                '<div class="worker-url mt-1">' +
+                  '<i class="fas fa-link me-1" style="font-size: 10px;"></i>' +
+                  '<span id="url-' + workerId + '">' + workerUrl + '</span>' +
+                  '<i class="fas fa-copy ms-2 copy-url-btn text-info" style="font-size: 12px; cursor: pointer;" ' +
+                     'onclick="event.stopPropagation(); copyToClipboard(\'' + workerUrl + '\', \'✅ URL ' + workerId + ' berhasil dicopy!\')"></i>' +
+                '</div>' +
+                '<div class="small text-muted mt-1">' +
+                  '<i class="fas fa-envelope me-1"></i>' + currentAcc.email +
+                '</div>' +
+              '</div>' +
+              '<div class="dropdown">' +
+                '<button class="btn btn-sm btn-outline-info rounded-circle" style="width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown">' +
+                  '<i class="fas fa-ellipsis-v"></i>' +
+                '</button>' +
+                '<ul class="dropdown-menu dropdown-menu-dark">' +
+                  actionsHtml +
+                '</ul>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
       }).join('');
     }
 
     async function deleteSingleWorker(workerName) {
-      if (!confirm(\`Yakin ingin menghapus worker "\${workerName}"?\`)) return;
+      if (!confirm('Yakin ingin menghapus ' + currentListType + ' "' + workerName + '"?')) return;
 
-      notify(\`Menghapus \${workerName}...\`);
+      notify('Menghapus ' + workerName + '...');
       try {
-        const res = await fetch('/api/delete', {
+        const endpoint = currentListType === 'workers' ? '/api/delete' : '/api/pages/delete';
+        const res = await fetch(endpoint, {
           method: 'DELETE',
           headers: {
             'X-Auth-Email': currentAcc.email,
@@ -1427,7 +1433,7 @@ export default {
         });
         const d = await res.json();
         if (d.success) {
-          notify(\`✅ Worker "\${workerName}" berhasil dihapus!\`);
+          notify('✅ ' + currentListType + ' "' + workerName + '" berhasil dihapus!');
           selectedWorkers.delete(workerName);
           fetchList();
           $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>';
@@ -1438,7 +1444,7 @@ export default {
             currentLoadedWorkerName = null;
           }
         } else {
-          notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || "Unknown error"), true);
+          notify("❌ Gagal hapus: " + (d.errors?.[0]?.message || d.error || "Unknown error"), true);
         }
       } catch(e) {
         notify("❌ Error: " + e.message, true);
@@ -1451,7 +1457,7 @@ export default {
         return;
       }
 
-      notify(\`Mengambil konfigurasi \${workerName}...\`);
+      notify('Mengambil konfigurasi ' + workerName + '...');
 
       try {
         const res = await fetch('/api/get?name=' + encodeURIComponent(workerName), {
@@ -1462,8 +1468,8 @@ export default {
         if (d.success) {
           const code = d.code;
           const codeLength = code.length;
-          const lines = code.split('\\n').length;
-          const workerUrl = d.url || \`https://\${workerName}.workers.dev\`;
+          const lines = code.split('\n').length;
+          const workerUrl = d.url || 'https://' + workerName + '.workers.dev';
 
           let workerType = 'Standard Worker';
           let features = [];
@@ -1492,82 +1498,80 @@ export default {
             features.push('WebSocket');
           }
 
-          const modalHtml = \`
-            <div class="modal fade" id="configModal" tabindex="-1" style="z-index: 1060;">
-              <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content config-modal text-white">
-                  <div class="modal-header border-secondary">
-                    <h5 class="modal-title">
-                      <i class="fas fa-cog text-primary"></i> Worker Configuration
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body">
-                    <div class="mb-4">
-                      <h6 class="text-info mb-3"><i class="fas fa-info-circle"></i> Worker Information</h6>
-                      <div class="row">
-                        <div class="col-md-6 mb-2">
-                          <div class="text-muted small">Worker Name</div>
-                          <div><code>\${workerName}</code></div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                          <div class="text-muted small">Account</div>
-                          <div>\${currentAcc.email}</div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                          <div class="text-muted small">Worker URL</div>
-                          <div>
-                            <code class="text-success">\${workerUrl}</code>
-                            <i class="fas fa-copy ms-2 copy-url-btn" style="cursor: pointer;"
-                               onclick="copyToClipboard('\${workerUrl}', '✅ Worker URL berhasil dicopy!')"></i>
-                          </div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                          <div class="text-muted small">Status</div>
-                          <div><span class="badge bg-success">Active</span></div>
-                        </div>
-                      </div>
-                    </div>
+          const modalHtml = '<div class="modal fade" id="configModal" tabindex="-1" style="z-index: 1060;">' +
+              '<div class="modal-dialog modal-dialog-centered modal-lg">' +
+                '<div class="modal-content config-modal text-white">' +
+                  '<div class="modal-header border-secondary">' +
+                    '<h5 class="modal-title">' +
+                      '<i class="fas fa-cog text-primary"></i> Worker Configuration' +
+                    '</h5>' +
+                    '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>' +
+                  '</div>' +
+                  '<div class="modal-body">' +
+                    '<div class="mb-4">' +
+                      '<h6 class="text-info mb-3"><i class="fas fa-info-circle"></i> Worker Information</h6>' +
+                      '<div class="row">' +
+                        '<div class="col-md-6 mb-2">' +
+                          '<div class="text-muted small">Worker Name</div>' +
+                          '<div><code>' + workerName + '</code></div>' +
+                        '</div>' +
+                        '<div class="col-md-6 mb-2">' +
+                          '<div class="text-muted small">Account</div>' +
+                          '<div>' + currentAcc.email + '</div>' +
+                        '</div>' +
+                        '<div class="col-md-6 mb-2">' +
+                          '<div class="text-muted small">Worker URL</div>' +
+                          '<div>' +
+                            '<code class="text-success">' + workerUrl + '</code>' +
+                            '<i class="fas fa-copy ms-2 copy-url-btn" style="cursor: pointer;" ' +
+                               'onclick="copyToClipboard(\'' + workerUrl + '\', \'✅ Worker URL berhasil dicopy!\')"></i>' +
+                          '</div>' +
+                        '</div>' +
+                        '<div class="col-md-6 mb-2">' +
+                          '<div class="text-muted small">Status</div>' +
+                          '<div><span class="badge bg-success">Active</span></div>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
 
-                    <div class="mb-4">
-                      <h6 class="text-info mb-3"><i class="fas fa-code"></i> Code Statistics</h6>
-                      <div class="row">
-                        <div class="col-md-4 mb-2">
-                          <div class="text-muted small">File Size</div>
-                          <div>\${(codeLength / 1024).toFixed(2)} KB</div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                          <div class="text-muted small">Lines of Code</div>
-                          <div>\${lines}</div>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                          <div class="text-muted small">Worker Type</div>
-                          <div><span class="badge bg-info">\${workerType}</span></div>
-                        </div>
-                      </div>
-                    </div>
+                    '<div class="mb-4">' +
+                      '<h6 class="text-info mb-3"><i class="fas fa-code"></i> Code Statistics</h6>' +
+                      '<div class="row">' +
+                        '<div class="col-md-4 mb-2">' +
+                          '<div class="text-muted small">File Size</div>' +
+                          '<div>' + (codeLength / 1024).toFixed(2) + ' KB</div>' +
+                        '</div>' +
+                        '<div class="col-md-4 mb-2">' +
+                          '<div class="text-muted small">Lines of Code</div>' +
+                          '<div>' + lines + '</div>' +
+                        '</div>' +
+                        '<div class="col-md-4 mb-2">' +
+                          '<div class="text-muted small">Worker Type</div>' +
+                          '<div><span class="badge bg-info">' + workerType + '</span></div>' +
+                        '</div>' +
+                      '</div>' +
+                    '</div>' +
 
-                    <div class="mb-4">
-                      <h6 class="text-info mb-3"><i class="fas fa-puzzle-piece"></i> Features Detected</h6>
-                      <div>
-                        \${features.length > 0 ? features.map(f => \`<span class="badge bg-secondary me-2 mb-2">\${f}</span>\`).join('') : '<span class="text-muted">No specific features detected</span>'}
-                      </div>
-                    </div>
+                    '<div class="mb-4">' +
+                      '<h6 class="text-info mb-3"><i class="fas fa-puzzle-piece"></i> Features Detected</h6>' +
+                      '<div>' +
+                        (features.length > 0 ? features.map(f => '<span class="badge bg-secondary me-2 mb-2">' + f + '</span>').join('') : '<span class="text-muted">No specific features detected</span>') +
+                      '</div>' +
+                    '</div>' +
 
-                    <div>
-                      <h6 class="text-info mb-3"><i class="fas fa-link"></i> Custom Domains</h6>
-                      <div id="configDomainsList" class="small">
-                        <span class="text-muted">Loading domains...</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          \`;
+                    '<div>' +
+                      '<h6 class="text-info mb-3"><i class="fas fa-link"></i> Custom Domains</h6>' +
+                      '<div id="configDomainsList" class="small">' +
+                        '<span class="text-muted">Loading domains...</span>' +
+                      '</div>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="modal-footer border-secondary">' +
+                    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
 
           const existingModal = document.getElementById('configModal');
           if (existingModal) existingModal.remove();
@@ -1600,7 +1604,7 @@ export default {
         if (container) {
           if (data.success && data.customDomains && data.customDomains.length > 0) {
             container.innerHTML = data.customDomains.map(d =>
-              \`<div class="mb-1"><i class="fas fa-globe text-success me-2"></i>\${d.hostname}</div>\`
+              '<div class="mb-1"><i class="fas fa-globe text-success me-2"></i>' + d.hostname + '</div>'
             ).join('');
           } else {
             container.innerHTML = '<span class="text-muted">No custom domains attached</span>';
@@ -1643,7 +1647,7 @@ export default {
       }
 
       const workerName = currentLoadedWorkerName || $('updateWorkerSelect').value || $('newWorkerName').value || 'worker';
-      const filename = \`\${workerName}.js\`;
+      const filename = workerName + '.js';
       const blob = new Blob([code], { type: 'application/javascript' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1653,7 +1657,7 @@ export default {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      notify(\`✅ Kode berhasil didownload sebagai \${filename}\`);
+      notify('✅ Kode berhasil didownload sebagai ' + filename);
     }
 
     function selectEditorMode(mode) {
@@ -1692,7 +1696,7 @@ export default {
       const select = $('updateWorkerSelect');
       if (workersList.length > 0) {
         select.innerHTML = '<option value="">Pilih Worker...</option>' +
-          workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
+          workersList.map(w => '<option value="' + w.id + '">' + w.id + '</option>').join('');
       } else {
         select.innerHTML = '<option value="">Belum ada worker, buat dulu</option>';
       }
@@ -1729,7 +1733,7 @@ export default {
           $('newWorkerName').value = '';
           currentLoadedWorkerName = workerName;
           enableCopyDownloadButtons(true);
-          notify(\`✅ Kode worker "\${workerName}" berhasil dimuat ke editor!\`);
+          notify('✅ Kode worker "' + workerName + '" berhasil dimuat ke editor!');
         } else {
           throw new Error(d.errors?.[0]?.message || "Gagal ambil kode");
         }
@@ -1767,7 +1771,7 @@ export default {
 
     function parseMultipleDomains(input) {
       let domains = [];
-      let temp = input.replace(/\\n/g, ',');
+      let temp = input.replace(/\n/g, ',');
       let parts = temp.split(',');
 
       for (let part of parts) {
@@ -1817,19 +1821,19 @@ export default {
       const fileExt = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
 
       if (!validExtensions.includes(fileExt)) {
-        notify(\`File type tidak didukung! Gunakan: \${validExtensions.join(', ')}\`, true);
+        notify('File type tidak didukung! Gunakan: ' + validExtensions.join(', '), true);
         return;
       }
 
-      notify(\`Membaca file: \${fileName}\`);
+      notify('Membaca file: ' + fileName);
 
       const reader = new FileReader();
       reader.onload = function(e) {
         const content = e.target.result;
         $('editor').value = content;
         updateView();
-        currentLoadedWorkerName = fileName.replace(/\\.[^/.]+$/, "");
-        notify(\`✅ File "\${fileName}" berhasil diimport! (\${(content.length / 1024).toFixed(2)} KB)\`);
+        currentLoadedWorkerName = fileName.replace(/\.[^/.]+$/, "");
+        notify('✅ File "' + fileName + '" berhasil diimport! (' + (content.length / 1024).toFixed(2) + ' KB)');
       };
       reader.onerror = function() {
         notify("Gagal membaca file!", true);
@@ -1890,7 +1894,7 @@ export default {
         currentAcc = null;
         $('statusBadge').style.display = 'none';
       } else {
-        $('accSelectorSidebar').innerHTML = accounts.map((a, i) => \`<option value="\${i}">\${a.email}</option>\`).join('');
+        $('accSelectorSidebar').innerHTML = accounts.map((a, i) => '<option value="' + i + '">' + a.email + '</option>').join('');
         switchAccountSidebar();
       }
     }
@@ -1917,71 +1921,79 @@ export default {
         return;
       }
 
-      notify("Memuat daftar worker...");
+      notify('Memuat daftar ' + currentListType + '...');
       try {
-        const res = await fetch('/api/list', {
+        const endpoint = currentListType === 'workers' ? '/api/list' : '/api/pages/list';
+        const res = await fetch(endpoint, {
           headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
         });
         const d = await res.json();
         if(d.success) {
-          workersList = d.result || [];
+          const list = d.result || [];
+          workersList = list.map(item => {
+              if (currentListType === 'pages') {
+                  return { id: item.name, name: item.name, url: item.subdomain };
+              }
+              return item;
+          });
           selectedWorkers.clear();
           renderWorkerList();
           updateSelectionUI();
 
           $('customDomainSelect').disabled = false;
           $('loadDomainsBtn').disabled = false;
-          $('customDomainSelect').innerHTML = '<option value="">Pilih Worker</option>' +
-            workersList.map(w => \`<option value="\${w.id}">\${w.id}</option>\`).join('');
+          $('customDomainSelect').innerHTML = '<option value="">Pilih ' + (currentListType === 'workers' ? 'Worker' : 'Project') + '</option>' +
+            workersList.map(w => '<option value="' + w.id + '">' + w.id + '</option>').join('');
 
           updateUpdateWorkerSelect();
-          notify(\`✅ \${workersList.length} worker ditemukan\`);
+          notify('✅ ' + workersList.length + ' ' + currentListType + ' ditemukan');
         } else {
-          throw new Error(d.errors?.[0]?.message || "Gagal load");
+          throw new Error(d.errors?.[0]?.message || d.error || "Gagal load");
         }
       } catch(e) {
         notify(e.message, true);
-        $('workerListContainer').innerHTML = '<div class="text-center text-danger py-3">Gagal memuat worker</div>';
+        $('workerListContainer').innerHTML = '<div class="text-center text-danger py-3">Gagal memuat list</div>';
       }
     }
 
     async function loadCustomDomains() {
       const workerName = $('customDomainSelect').value;
       if(!workerName || !currentAcc) {
-        notify("Pilih worker terlebih dahulu!", true);
+        notify("Pilih data terlebih dahulu!", true);
         return;
       }
 
       notify("Memuat domain...");
       try {
-        const res = await fetch('/api/get-custom-domains?name=' + encodeURIComponent(workerName), {
+        const isWorkers = currentListType === 'workers';
+        const endpoint = isWorkers ? '/api/get-custom-domains?name=' + encodeURIComponent(workerName) : '/api/pages/get-domains?name=' + encodeURIComponent(workerName);
+
+        const res = await fetch(endpoint, {
           headers: { 'X-Auth-Email': currentAcc.email, 'X-Auth-Key': currentAcc.key }
         });
         const data = await res.json();
 
         if(data.success) {
           availableZones = data.zones || [];
-          const zoneOptions = availableZones.map(z => \`<option value="\${z.zone_id}">\${z.zone_name}</option>\`).join('');
+          const zoneOptions = availableZones.map(z => '<option value="' + z.zone_id + '">' + z.zone_name + '</option>').join('');
           $('zoneSelect').innerHTML = zoneOptions;
           $('zoneSelectMultiple').innerHTML = zoneOptions;
 
-          currentWorkerDomains = data.customDomains || [];
+          currentWorkerDomains = data.result || data.customDomains || [];
           $('domainList').innerHTML = currentWorkerDomains.length === 0 ?
             '<div class="text-center text-muted py-3"><i class="fas fa-globe fa-2x mb-2 d-block"></i>Belum ada custom domain</div>' :
-            currentWorkerDomains.map(domain => \`
-              <div class="domain-item p-3 mb-2">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div>
-                    <div class="fw-bold"><i class="fas fa-link text-success me-1"></i> \${domain.hostname}</div>
-                    <div class="small text-success"><i class="fas fa-lock me-1"></i> SSL: Let's Encrypt</div>
-                    <small class="text-muted">Env: \${domain.environment}</small>
-                  </div>
-                  <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteCustomDomain('\${domain.id}')">
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
-              </div>
-            \`).join('');
+            currentWorkerDomains.map(domain => '<div class="domain-item p-3 mb-2">' +
+                '<div class="d-flex justify-content-between align-items-start">' +
+                  '<div>' +
+                    '<div class="fw-bold"><i class="fas fa-link text-success me-1"></i> ' + (domain.hostname || domain.name) + '</div>' +
+                    '<div class="small text-success"><i class="fas fa-lock me-1"></i> SSL Active</div>' +
+                    '<small class="text-muted">Status: ' + (domain.status || 'Active') + '</small>' +
+                  '</div>' +
+                  '<button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteCustomDomain(\'' + domain.id + '\')">' +
+                    '<i class="fas fa-trash-alt"></i>' +
+                  '</button>' +
+                '</div>' +
+              '</div>').join('');
           notify("✅ Domain berhasil dimuat!");
         } else {
           notify("❌ Gagal load domain: " + (data.error || "Unknown error"), true);
@@ -2006,32 +2018,36 @@ export default {
         return;
       }
 
-      const fullDomain = \`\${domainInput}.\${selectedZone.zone_name}\`;
+      const fullDomain = domainInput + '.' + selectedZone.zone_name;
 
-      if(!fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$/)) {
-        notify(\`Domain tidak valid! Pastikan "\${domainInput}" adalah subdomain yang valid.\`, true);
+      if(!fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$/)) {
+        notify('Domain tidak valid! Pastikan "' + domainInput + '" adalah subdomain yang valid.', true);
         return;
       }
 
-      notify(\`Mengattach domain \${fullDomain}...\`);
+      notify('Mengattach domain ' + fullDomain + '...');
       try {
-        const res = await fetch('/api/attach-domain', {
+        const isWorkers = currentListType === 'workers';
+        const endpoint = isWorkers ? '/api/attach-domain' : '/api/pages/attach-domain';
+        const body = isWorkers ? { workerName, domain: fullDomain, zoneId } : { projectName: workerName, domain: fullDomain };
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'X-Auth-Email': currentAcc.email,
             'X-Auth-Key': currentAcc.key,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ workerName, domain: fullDomain, zoneId })
+          body: JSON.stringify(body)
         });
         const d = await res.json();
         if(d.success) {
-          notify(\`✅ \${d.message}\`);
+          notify('✅ ' + (d.message || 'Domain attached'));
           $('newDomain').value = '';
           toggleAddDomainForm();
           loadCustomDomains();
         } else {
-          notify("❌ Gagal: " + (d.message || d.error), true);
+          notify("❌ Gagal: " + (d.message || d.error || (d.errors && d.errors[0]?.message)), true);
         }
       } catch(e) {
         notify("❌ Error: " + e.message, true);
@@ -2069,8 +2085,8 @@ export default {
           invalidDomains.push(sub);
           continue;
         }
-        const fullDomain = \`\${sub}.\${selectedZone.zone_name}\`;
-        if(fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\\.[a-zA-Z]{2,}$/)) {
+        const fullDomain = sub + '.' + selectedZone.zone_name;
+        if(fullDomain.match(/^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$/)) {
           domains.push(fullDomain);
         } else {
           invalidDomains.push(sub);
@@ -2083,10 +2099,33 @@ export default {
       }
 
       if(invalidDomains.length > 0) {
-        notify(\`⚠️ \${invalidDomains.length} subdomain tidak valid: \${invalidDomains.join(', ')}\`, true);
+        notify('⚠️ ' + invalidDomains.length + ' subdomain tidak valid: ' + invalidDomains.join(', '), true);
       }
 
-      notify(\`Mengattach \${domains.length} domain ke worker \${workerName}...\`);
+      notify('Mengattach ' + domains.length + ' domain...');
+
+      if (currentListType === 'pages') {
+          // Pages doesn't have bulk API in our backend, so we do them sequentially
+          let successCount = 0;
+          for (const domain of domains) {
+              try {
+                  const res = await fetch('/api/pages/attach-domain', {
+                      method: 'POST',
+                      headers: {
+                          'X-Auth-Email': currentAcc.email,
+                          'X-Auth-Key': currentAcc.key,
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ projectName: workerName, domain })
+                  });
+                  const d = await res.json();
+                  if (d.success) successCount++;
+              } catch(e) {}
+          }
+          notify('✅ Selesai! ' + successCount + ' dari ' + domains.length + ' domain berhasil diattach');
+          loadCustomDomains();
+          return;
+      }
 
       try {
         const res = await fetch('/api/attach-multiple-domains', {
@@ -2103,22 +2142,19 @@ export default {
         const resultDiv = $('multipleResult');
         resultDiv.style.display = 'block';
 
-        let successHtml = '<div class="mt-2"><strong>Hasil Attach Domain:</strong></div>';
-        successHtml += '<div class="mt-2">';
+        let successHtml = '<div class="mt-2"><strong>Hasil Attach Domain:</strong></div><div class="mt-2">';
         for (let r of result.results) {
           const statusClass = r.success ? 'text-success' : 'text-danger';
           const statusIcon = r.success ? '✅' : '❌';
-          successHtml += \`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.3);">
-              <span><code>\${r.domain}</code></span>
-              <span class="\${statusClass}">\${statusIcon} \${r.message}</span>
-            </div>
-          \`;
+          successHtml += '<div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.3);">' +
+              '<span><code>' + r.domain + '</code></span>' +
+              '<span class="' + statusClass + '">' + statusIcon + ' ' + r.message + '</span>' +
+            '</div>';
         }
-        successHtml += \`</div><div class="mt-2 text-center">Total: \${result.total} | Berhasil: \${result.successCount} | Gagal: \${result.failedCount}</div>\`;
+        successHtml += '</div><div class="mt-2 text-center">Total: ' + result.total + ' | Berhasil: ' + result.successCount + ' | Gagal: ' + result.failedCount + '</div>';
         resultDiv.innerHTML = successHtml;
 
-        notify(\`✅ Selesai! \${result.successCount} dari \${result.total} domain berhasil diattach\`, false);
+        notify('✅ Selesai! ' + result.successCount + ' dari ' + result.total + ' domain berhasil diattach', false);
         loadCustomDomains();
       } catch(e) {
         notify("❌ Error: " + e.message, true);
@@ -2149,7 +2185,7 @@ export default {
           notify("✅ Domain berhasil dihapus!");
           loadCustomDomains();
         } else {
-          notify("❌ Gagal: " + (d.message || d.error), true);
+          notify("❌ Gagal: " + (d.message || d.error || (d.errors && d.errors[0]?.message)), true);
         }
       } catch(e) {
         notify("❌ Error: " + e.message, true);
@@ -2210,8 +2246,8 @@ export default {
         });
         const d = await res.json();
         if(d.success) {
-          const deployUrl = d.subdomain || \`https://\${workerName}.workers.dev\`;
-          notify(\`✅ BERHASIL DI-DEPLOY!\\nWorker: \${workerName}\\nURL: \${deployUrl}\`);
+          const deployUrl = d.subdomain || 'https://' + workerName + '.workers.dev';
+          notify('✅ BERHASIL DI-DEPLOY!\nWorker: ' + workerName + '\nURL: ' + deployUrl);
           fetchList();
           $('newWorkerName').value = '';
           currentLoadedWorkerName = workerName;
@@ -2229,7 +2265,7 @@ export default {
 
     function updateView() {
       let code = $('editor').value;
-      if(code && code[code.length-1] == "\\n") code += " ";
+      if(code && code[code.length-1] == "\n") code += " ";
       $('highlighting-content').textContent = code || '';
       Prism.highlightElement($('highlighting-content'));
     }
