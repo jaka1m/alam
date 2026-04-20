@@ -36,11 +36,11 @@ const BOOTSTRAP_STYLES = `
         --card-bg: rgba(255, 255, 255, 0.05);
         --border-glow: rgba(102, 126, 234, 0.3);
     }
-    
+
     * {
         font-family: 'Inter', sans-serif;
     }
-    
+
     body {
         background: var(--dark-bg);
         color: #ffffff;
@@ -48,7 +48,7 @@ const BOOTSTRAP_STYLES = `
         margin: 0;
         padding: 0;
     }
-    
+
     canvas.webgl {
         position: fixed;
         top: 0;
@@ -57,7 +57,7 @@ const BOOTSTRAP_STYLES = `
         height: 100%;
         z-index: -1;
     }
-    
+
     /* Animated Background */
     .animated-bg {
         position: fixed;
@@ -68,7 +68,7 @@ const BOOTSTRAP_STYLES = `
         z-index: -2;
         background: linear-gradient(125deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
     }
-    
+
     .animated-bg::before {
         content: '';
         position: absolute;
@@ -77,12 +77,12 @@ const BOOTSTRAP_STYLES = `
         background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%);
         animation: rotate 20s linear infinite;
     }
-    
+
     @keyframes rotate {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
-    
+
     /* Floating particles */
     .particles {
         position: fixed;
@@ -93,21 +93,21 @@ const BOOTSTRAP_STYLES = `
         z-index: -1;
         overflow: hidden;
     }
-    
+
     .particle {
         position: absolute;
         background: rgba(102, 126, 234, 0.3);
         border-radius: 50%;
         animation: float 15s infinite ease-in-out;
     }
-    
+
     @keyframes float {
         0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
         10% { opacity: 0.5; }
         90% { opacity: 0.5; }
         100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
     }
-    
+
     /* Glassmorphism Card */
     .glass-card {
         background: rgba(255, 255, 255, 0.05);
@@ -116,13 +116,13 @@ const BOOTSTRAP_STYLES = `
         border: 1px solid rgba(255, 255, 255, 0.1);
         transition: all 0.3s ease;
     }
-    
+
     .glass-card:hover {
         transform: translateY(-5px);
         border-color: rgba(102, 126, 234, 0.5);
         box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
     }
-    
+
     /* Gradient Buttons */
     .btn-gradient {
         background: var(--primary-gradient);
@@ -134,12 +134,12 @@ const BOOTSTRAP_STYLES = `
         position: relative;
         overflow: hidden;
     }
-    
+
     .btn-gradient:hover {
         transform: scale(1.05);
         box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
-    
+
     .btn-gradient::before {
         content: '';
         position: absolute;
@@ -152,12 +152,12 @@ const BOOTSTRAP_STYLES = `
         transform: translate(-50%, -50%);
         transition: width 0.6s, height 0.6s;
     }
-    
+
     .btn-gradient:hover::before {
         width: 300px;
         height: 300px;
     }
-    
+
     /* Form Controls */
     .form-control-glow {
         background: rgba(255, 255, 255, 0.05);
@@ -167,7 +167,7 @@ const BOOTSTRAP_STYLES = `
         color: white;
         transition: all 0.3s ease;
     }
-    
+
     .form-control-glow:focus {
         background: rgba(255, 255, 255, 0.1);
         border-color: #667eea;
@@ -175,40 +175,40 @@ const BOOTSTRAP_STYLES = `
         color: white;
         outline: none;
     }
-    
+
     .form-control-glow::placeholder {
         color: rgba(255, 255, 255, 0.5);
     }
-    
+
     /* Table Styling */
     .table-glow {
         background: rgba(255, 255, 255, 0.03);
         border-radius: 16px;
         overflow: hidden;
     }
-    
+
     .table-glow thead th {
         background: rgba(102, 126, 234, 0.2);
         border-bottom: 1px solid rgba(102, 126, 234, 0.3);
         padding: 15px;
         font-weight: 600;
     }
-    
+
     .table-glow tbody tr {
         transition: all 0.3s ease;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    
+
     .table-glow tbody tr:hover {
         background: rgba(102, 126, 234, 0.1);
         transform: scale(1.01);
     }
-    
+
     .table-glow td {
         padding: 12px 15px;
         vertical-align: middle;
     }
-    
+
     /* Badge Styles */
     .badge-glow {
         background: linear-gradient(135deg, #667eea, #764ba2);
@@ -217,15 +217,15 @@ const BOOTSTRAP_STYLES = `
         font-size: 0.75rem;
         font-weight: 600;
     }
-    
+
     .badge-success {
         background: linear-gradient(135deg, #11998e, #38ef7d);
     }
-    
+
     .badge-danger {
         background: linear-gradient(135deg, #f093fb, #f5576c);
     }
-    
+
     /* Pagination */
     .pagination-glow .page-item .page-link {
         background: rgba(255, 255, 255, 0.05);
@@ -235,17 +235,17 @@ const BOOTSTRAP_STYLES = `
         border-radius: 10px;
         transition: all 0.3s ease;
     }
-    
+
     .pagination-glow .page-item.active .page-link {
         background: var(--primary-gradient);
         border-color: #667eea;
     }
-    
+
     .pagination-glow .page-item .page-link:hover {
         background: rgba(102, 126, 234, 0.3);
         transform: translateY(-2px);
     }
-    
+
     /* Loading Spinner */
     .spinner-glow {
         width: 3rem;
@@ -255,32 +255,32 @@ const BOOTSTRAP_STYLES = `
         border-radius: 50%;
         animation: spinner 0.75s linear infinite;
     }
-    
+
     @keyframes spinner {
         to { transform: rotate(360deg); }
     }
-    
+
     /* Scrollbar */
     ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
     }
-    
+
     ::-webkit-scrollbar-track {
         background: rgba(255, 255, 255, 0.05);
         border-radius: 10px;
     }
-    
+
     ::-webkit-scrollbar-thumb {
         background: linear-gradient(135deg, #667eea, #764ba2);
         border-radius: 10px;
     }
-    
+
     /* Animations */
     .fade-in-up {
         animation: fadeInUp 0.6s ease-out;
     }
-    
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -291,7 +291,7 @@ const BOOTSTRAP_STYLES = `
             transform: translateY(0);
         }
     }
-    
+
     /* Status Badge */
     .status-badge {
         display: inline-flex;
@@ -302,48 +302,48 @@ const BOOTSTRAP_STYLES = `
         font-size: 0.75rem;
         font-weight: 600;
     }
-    
+
     .status-active {
         background: rgba(56, 239, 125, 0.2);
         color: #38ef7d;
         border: 1px solid rgba(56, 239, 125, 0.3);
     }
-    
+
     .status-dead {
         background: rgba(245, 87, 108, 0.2);
         color: #f5576c;
         border: 1px solid rgba(245, 87, 108, 0.3);
     }
-    
+
     .delay-badge {
         font-size: 0.7rem;
         color: rgba(255, 255, 255, 0.6);
         margin-left: 5px;
     }
-    
+
     /* Responsive */
     @media (max-width: 768px) {
         .glass-card {
             margin: 10px;
             padding: 15px;
         }
-        
+
         .table-glow {
             font-size: 0.8rem;
         }
-        
+
         .table-glow td, .table-glow th {
             padding: 8px 10px;
         }
     }
-    
+
     /* Container utama */
     .main-container {
         position: relative;
         z-index: 1;
         min-height: 100vh;
     }
-    
+
     /* Toggle Switch */
     .toggle-switch {
         position: relative;
@@ -351,13 +351,13 @@ const BOOTSTRAP_STYLES = `
         width: 50px;
         height: 24px;
     }
-    
+
     .toggle-switch input {
         opacity: 0;
         width: 0;
         height: 0;
     }
-    
+
     .toggle-slider {
         position: absolute;
         cursor: pointer;
@@ -369,7 +369,7 @@ const BOOTSTRAP_STYLES = `
         transition: .4s;
         border-radius: 24px;
     }
-    
+
     .toggle-slider:before {
         position: absolute;
         content: "";
@@ -381,11 +381,11 @@ const BOOTSTRAP_STYLES = `
         transition: .4s;
         border-radius: 50%;
     }
-    
+
     input:checked + .toggle-slider {
         background: linear-gradient(135deg, #667eea, #764ba2);
     }
-    
+
     input:checked + .toggle-slider:before {
         transform: translateX(26px);
     }
@@ -425,10 +425,10 @@ ${BOOTSTRAP_STYLES}
 
 <div class="color-controls glass-card" id="colorControls" style="position: fixed; bottom: 80px; right: 20px; width: 340px; max-height: 80vh; overflow-y: auto; z-index: 999; display: none; padding: 20px;">
     <h3 style="margin-bottom: 20px; font-size: 1.2rem; font-weight: 600;">Galaxy Controls</h3>
-    
+
     <div class="control-section" style="margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px; font-weight: 600; font-size: 0.9rem;">🎨 Colors</div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Inside Color</label>
             <div style="display: flex; gap: 10px;">
@@ -436,7 +436,7 @@ ${BOOTSTRAP_STYLES}
                 <input type="text" id="insideColorText" value="#ff6030" class="form-control form-control-sm" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 5px 10px; color: white;">
             </div>
         </div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Outside Color</label>
             <div style="display: flex; gap: 10px;">
@@ -445,43 +445,43 @@ ${BOOTSTRAP_STYLES}
             </div>
         </div>
     </div>
-    
+
     <div class="control-section" style="margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px; font-weight: 600; font-size: 0.9rem;">✨ Particles</div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Particle Size: <span id="sizeValue" style="color: #667eea;">0.01</span></label>
             <input type="range" id="particleSize" min="0.001" max="0.05" step="0.001" value="0.01" class="form-range" style="width: 100%;">
         </div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Particle Count: <span id="countValue" style="color: #667eea;">100000</span></label>
             <input type="range" id="particleCount" min="10000" max="500000" step="10000" value="100000" class="form-range" style="width: 100%;">
         </div>
     </div>
-    
+
     <div class="control-section" style="margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px; font-weight: 600; font-size: 0.9rem;">🌀 Animation</div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Spin Factor: <span id="spinValue" style="color: #667eea;">3</span></label>
             <input type="range" id="spinFactor" min="0.1" max="10" step="0.1" value="3" class="form-range" style="width: 100%;">
         </div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Branches: <span id="branchesValue" style="color: #667eea;">3</span></label>
             <input type="range" id="branches" min="1" max="8" step="1" value="3" class="form-range" style="width: 100%;">
         </div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <label style="display: block; margin-bottom: 5px; font-size: 0.85rem;">Randomness: <span id="randomnessValue" style="color: #667eea;">5</span></label>
             <input type="range" id="randomness" min="0.1" max="10" step="0.1" value="5" class="form-range" style="width: 100%;">
         </div>
     </div>
-    
+
     <div class="control-section" style="margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px; font-weight: 600; font-size: 0.9rem;">⚙️ Controls</div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <label style="font-size: 0.85rem;">Auto Rotation</label>
@@ -491,7 +491,7 @@ ${BOOTSTRAP_STYLES}
                 </label>
             </div>
         </div>
-        
+
         <div class="control-group" style="margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <label style="font-size: 0.85rem;">Orbit Controls</label>
@@ -502,7 +502,7 @@ ${BOOTSTRAP_STYLES}
             </div>
         </div>
     </div>
-    
+
     <div class="control-section" style="margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px; font-weight: 600; font-size: 0.9rem;">🎯 Presets</div>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
@@ -514,7 +514,7 @@ ${BOOTSTRAP_STYLES}
             <button class="preset-btn btn btn-sm" data-preset="forest" style="background: linear-gradient(135deg, #00ff99, #009933); border: none; color: white; padding: 6px 12px; border-radius: 8px;">Forest</button>
         </div>
     </div>
-    
+
     <button class="reset-btn btn btn-danger w-100" id="resetBtn" style="border-radius: 10px; padding: 10px;">Reset to Default</button>
 </div>
 
@@ -537,7 +537,7 @@ ${BOOTSTRAP_STYLES}
         canvas.className = 'webgl';
         document.body.appendChild(canvas);
     }
-    
+
     const scene = new THREE.Scene();
 
     const defaultParameters = {
@@ -667,7 +667,7 @@ ${BOOTSTRAP_STYLES}
                 camera.position.y = tilt * 4.2 + 2.2;
                 camera.lookAt(0, 0, 0);
             }
-            
+
             if (parameters.orbitControls) {
                 controls.update();
             }
@@ -844,7 +844,7 @@ const wildcards = [];
 class CloudflareApi {
   constructor() {
     this.bearer = `Bearer ${scriptConfig.API_KEY}`;
-    
+
     this.headers = {
       Authorization: this.bearer,
       "X-Auth-Email": scriptConfig.API_EMAIL,
@@ -943,7 +943,7 @@ const SIDEBAR_COMPONENT = `
             }
         }
     </script>
-    
+
     <button @click="sidebarOpen = true" class="floating-button fixed top-6 left-6 z-50 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all duration-300">
         <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -982,7 +982,7 @@ const SIDEBAR_COMPONENT = `
                     </button>
                 </div>
             </div>
-            
+
             <a href="/web" class="menu-item flex items-center py-3 px-4 rounded-lg hover:bg-gray-800 transition-all duration-200 group">
                 <div class="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center mr-3 shadow-md group-hover:scale-110 transition-transform">
                     <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1045,7 +1045,7 @@ const SIDEBAR_COMPONENT = `
                 </div>
             </a>
         </nav>
-        
+
         <div class="absolute bottom-6 left-6 right-6">
             <div class="border-t border-gray-700 pt-4">
                 <div class="flex items-center justify-between">
@@ -1162,7 +1162,7 @@ export default {
       const upgradeHeader = request.headers.get("Upgrade");
       const CHECK_API_BASE = `https://${myurl}`;
       const CHECK_API = `${CHECK_API_BASE}/check?ip=`;
-      
+
       // Handle IP check
       if (url.pathname === "/geo-ip") {
         const ip = url.searchParams.get("ip");
@@ -1180,7 +1180,7 @@ export default {
         return new Response(JSON.stringify(data), {
           headers: { "Content-Type": "application/json" },
         });
-      }      
+      }
 
       async function updateProxies() {
         const proxies = await getProxyList();
@@ -1197,7 +1197,7 @@ export default {
         const allMatch = url.pathname.match(/^\/Free-VPN-CF-Geo-Project\/ALL(\d*)$/);
 
         if (allMatch) {
-          const indexStr = allMatch[1]; 
+          const indexStr = allMatch[1];
           const index = indexStr ? parseInt(indexStr) - 1 : Math.floor(Math.random() * 10000);
 
           console.log(`ALL Proxy Request. Index Requested: ${indexStr ? index + 1 : 'Random'}`);
@@ -1336,7 +1336,7 @@ async function handleCheck(paramss) {
 
   try {
     const apiResponse = await fetch(apiUrl);
-    
+
     const result = await apiResponse.json();
 
     const responseData = {
@@ -1459,7 +1459,7 @@ function mamangenerateHTML() {
 <body>
   ${GALAXY_ANIMATION_COMPONENT}
   ${SIDEBAR_COMPONENT}
-  
+
   <div class="container">
     <header>
       <h1><i class="fas fa-shield-alt"></i> Proxy Checker</h1>
@@ -1697,10 +1697,10 @@ async function handleStatsRequest() {
         <div class="cards-container" id="cardsContainer">
             ${allCardsHtml}
         </div>
-        
+
         <div class="pagination-container" id="paginationContainer"></div>
         <div class="pagination-info" id="paginationInfo"></div>
-        
+
         <footer>Powered by <a href="https://t.me/sampiiiiu" target="_blank" style="color: #667eea; text-decoration: none;">GEO PROJECT</a></footer>
     </div>
 
@@ -1713,7 +1713,7 @@ async function handleStatsRequest() {
             const itemsPerPage = 6;
             let currentPage = 1;
             const totalPages = Math.ceil(cards.length / itemsPerPage);
-            
+
             function showPage(page) {
                 cards.forEach(card => card.classList.remove('active'));
                 const startIndex = (page - 1) * itemsPerPage;
@@ -1722,7 +1722,7 @@ async function handleStatsRequest() {
                 updatePaginationButtons(page);
                 updatePageInfo(page);
             }
-            
+
             function updatePaginationButtons(activePage) {
                 paginationContainer.innerHTML = '';
                 const prevButton = document.createElement('button');
@@ -1731,7 +1731,7 @@ async function handleStatsRequest() {
                 prevButton.disabled = activePage === 1;
                 prevButton.onclick = () => { if (activePage > 1) showPage(activePage - 1); };
                 paginationContainer.appendChild(prevButton);
-                
+
                 for (let i = 1; i <= totalPages; i++) {
                     const pageButton = document.createElement('button');
                     pageButton.textContent = i;
@@ -1739,7 +1739,7 @@ async function handleStatsRequest() {
                     pageButton.onclick = () => showPage(i);
                     paginationContainer.appendChild(pageButton);
                 }
-                
+
                 const nextButton = document.createElement('button');
                 nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
                 nextButton.className = 'pagination-btn';
@@ -1747,13 +1747,13 @@ async function handleStatsRequest() {
                 nextButton.onclick = () => { if (activePage < totalPages) showPage(activePage + 1); };
                 paginationContainer.appendChild(nextButton);
             }
-            
+
             function updatePageInfo(page) {
                 const startItem = (page - 1) * itemsPerPage + 1;
                 const endItem = Math.min(page * itemsPerPage, cards.length);
                 paginationInfo.textContent = 'Showing ' + startItem + '-' + endItem + ' of ' + cards.length + ' data';
             }
-            
+
             if (cards.length > 0) { showPage(currentPage); }
             else { paginationContainer.style.display = 'none'; paginationInfo.textContent = 'No data to display'; }
         });
@@ -1815,7 +1815,7 @@ async function handleKuotaRequest() {
 ${GALAXY_ANIMATION_COMPONENT}
 ${SIDEBAR_COMPONENT}
     <div id="cover-spin"><div class="loader"></div></div>
-    
+
     <div class="main-container">
         <div class="header-card">
             <div class="logo-container">
@@ -1823,11 +1823,11 @@ ${SIDEBAR_COMPONENT}
                 <h1 class="title">Cek Kuota XL/AXIS</h1>
             </div>
         </div>
-        
+
         <div class="info-box">
             <i class="fa fa-info-circle"></i> Use this service wisely. Make sure the number entered is an active XL/AXIS number.
         </div>
-        
+
         <div class="form-container">
             <form id="formnya">
                 <div class="mb-4">
@@ -1906,7 +1906,7 @@ async function handleSubRequest(hostnem) {
   const countries = await getCountryList();
   const countryOptions = countries.map(c => `<option value="${c.code.toLowerCase()}">${c.name}</option>`).join('\n');
 
-  const html = ` 
+  const html = `
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -1946,11 +1946,11 @@ async function handleSubRequest(hostnem) {
 <body>
     ${GALAXY_ANIMATION_COMPONENT}
     ${SIDEBAR_COMPONENT}
-    
+
     <div class="container">
         <div class="card">
             <h1 class="title"><i class="fas fa-link"></i> Sub Link Generator</h1>
-            
+
             <form id="subLinkForm">
                 <div class="form-group">
                     <label><i class="fas fa-mobile-alt"></i> Application</label>
@@ -2065,7 +2065,7 @@ async function handleSubRequest(hostnem) {
                 try {
                     const requiredFields = ['bug', 'limit'];
                     for (let field of requiredFields) {
-                        if (!elements[field].value.trim()) throw new Error(`Please fill ${field === 'bug' ? 'Bug Host' : 'Config Limit'}`);
+                        if (!elements[field].value.trim()) throw new Error(\`Please fill \${field === 'bug' ? 'Bug Host' : 'Config Limit'}\`);
                     }
 
                     const params = new URLSearchParams({
@@ -2077,16 +2077,16 @@ async function handleSubRequest(hostnem) {
                         ...(elements.country.value !== 'all' && { country: elements.country.value })
                     });
 
-                    const generatedLink = `/vpn/${elements.app.value}?${params.toString()}`;
+                    const generatedLink = \`/vpn/\${elements.app.value}?\${params.toString()}\`;
                     await new Promise(resolve => setTimeout(resolve, 500));
 
                     loadingEl.style.display = 'none';
                     resultEl.style.display = 'block';
-                    generatedLinkEl.textContent = `https://${window.location.hostname}${generatedLink}`;
+                    generatedLinkEl.textContent = \`https://\${window.location.hostname}\${generatedLink}\`;
 
                     copyLinkBtn.onclick = async () => {
                         try {
-                            await navigator.clipboard.writeText(`https://${window.location.hostname}${generatedLink}`);
+                            await navigator.clipboard.writeText(\`https://\${window.location.hostname}\${generatedLink}\`);
                             Swal.fire({ icon: 'success', title: 'Success!', text: 'Link copied!', background: 'rgba(30, 41, 59, 0.9)', color: '#f1f5f9' });
                         } catch { Swal.fire({ icon: 'error', title: 'Failed!', text: 'Failed to copy link.', background: 'rgba(30, 41, 59, 0.9)', color: '#f1f5f9' }); }
                     };
@@ -2116,7 +2116,7 @@ async function handleWebRequest(request) {
         if (hostname.endsWith(suffixRootOnly)) return hostname.slice(0, -suffixRootOnly.length);
         return hostname;
     });
-    
+
     const allWildcards = [...new Set([...wildcards, ...dynamicWildcards])];
 
     const fetchConfigs = async () => {
@@ -2178,7 +2178,7 @@ function buildCountryFlag() {
             (`${config.ip}:${config.port}`).includes(searchQuery.toLowerCase()) ||
             config.isp.toLowerCase().includes(searchQuery.toLowerCase()));
     }
-     
+
     const totalFilteredConfigs = filteredConfigs.length;
     const totalPages = Math.ceil(totalFilteredConfigs / configsPerPage);
     const startIndex = (page - 1) * configsPerPage;
@@ -2219,7 +2219,7 @@ function buildCountryFlag() {
         const trojanTLSRibet = `trojan://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${subP}${path2}#${encodedFragment}`;
         const ssTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
         const ssTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${subP}${path2}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
-        
+
         const vlessNTLSSimple = `vless://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
         const vlessNTLSRibet = `vless://${uuid}@${wildcard}:80?path=${subP}${path2}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
         const trojanNTLSSimple = `trojan://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
@@ -2367,11 +2367,11 @@ function buildCountryFlag() {
     ${GALAXY_ANIMATION_COMPONENT}
     ${SIDEBAR_COMPONENT}
     <div class="quantum-container">
-        <div class="wildcard-dropdown"> 
+        <div class="wildcard-dropdown">
             <button onclick="toggleWildcardsWindow()" class="bg-gradient-to-r from-green-500 to-green-700 rounded-full p-2 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
-                </svg> 
+                </svg>
             </button>
             <select id="wildcard" name="wildcard" onchange="onWildcardChange(event)" style="width: 100px;">
                 <option value="" ${!selectedWildcard ? 'selected' : ''}>No Wildcard</option>
@@ -2379,32 +2379,32 @@ function buildCountryFlag() {
             </select>
             <select id="configType" name="configType" onchange="onConfigTypeChange(event)" style="width: 80px;">
                 <option value="tls" ${selectedConfigType === 'tls' ? 'selected' : ''}>TLS</option>
-                <option value="non-tls" ${selectedConfigType === 'non-tls' ? 'selected' : ''}>NON TLS</option> 
+                <option value="non-tls" ${selectedConfigType === 'non-tls' ? 'selected' : ''}>NON TLS</option>
             </select>
             <a href="${telegrambot}" target="_blank">
                 <button class="bg-gradient-to-r from-green-400 to-green-600 rounded-full p-2 text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12A10 10 0 0 1 12 2A10 10 0 0 1 2 12A10 10 0 0 1 12 22A10 10 0 0 1 22 12z"/><path d="M7 10l5 5l5-5"/></svg>
-                </button> 
+                </button>
             </a>
         </div>
-        
+
         <div class="w-full h-12 px-2 py-1 flex items-center space-x-2 shadow-lg border border-green-500 rounded-lg overflow-x-auto">
             ${buildCountryFlag()}
         </div>
-        
+
         ${tableHTML}
         ${showOptionsScript}
-        
+
         <div class="quantum-pagination">
             ${prevPage}
             ${paginationButtons.join('')}
             ${nextPage}
         </div>
-        
+
         <div style="text-align: center; margin-top: 16px; color: #667eea;">
             Showing ${startIndex + 1} to ${endIndex} of ${totalFilteredConfigs} Proxies
         </div>
-        
+
         <footer>
             <div class="social-icons">
                 <a href="https://github.com/jaka1m" class="social-icon"><i class="fab fa-github"></i></a>
@@ -2416,7 +2416,7 @@ function buildCountryFlag() {
     </div>
 
     <div id="wildcards-window" class="fixed hidden z-30 top-0 right-0 w-full h-full flex justify-center items-center">
-        <div class="w-[75%] max-w-md h-auto flex flex-col gap-2 p-4 rounded-lg bg-blue-500 bg-opacity-20 backdrop-blur-md border border-blue-300 text-white"> 
+        <div class="w-[75%] max-w-md h-auto flex flex-col gap-2 p-4 rounded-lg bg-blue-500 bg-opacity-20 backdrop-blur-md border border-blue-300 text-white">
             <div class="flex w-full gap-2">
                 <input id="new-domain-input" type="text" placeholder="Input wildcard" class="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
                 <button id="add-domain-button" onclick="registerDomain()" class="p-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white">
@@ -2498,7 +2498,7 @@ function buildCountryFlag() {
         let domains = [];
         const wildcardsWindow = document.getElementById('wildcards-window');
         const domainsContainer = document.getElementById('container-domains');
-        
+
         async function loadDomains() {
             try {
                 const response = await fetch('/api/v1/domains');
@@ -2510,7 +2510,7 @@ function buildCountryFlag() {
         }
 
         function toggleWildcardsWindow() {
-            if (wildcardsWindow.classList.contains('hidden')) { loadDomains(); wildcardsWindow.classList.remove('hidden'); } 
+            if (wildcardsWindow.classList.contains('hidden')) { loadDomains(); wildcardsWindow.classList.remove('hidden'); }
             else { wildcardsWindow.classList.add('hidden'); }
         }
 
@@ -2524,7 +2524,7 @@ function buildCountryFlag() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ domain }),
                 });
-                if (response.ok) { input.value = ''; await loadDomains(); } 
+                if (response.ok) { input.value = ''; await loadDomains(); }
                 else { alert('Failed to register domain: ' + await response.text()); }
             } catch (error) { console.error('Error registering domain:', error); alert('An error occurred while registering the domain.'); }
         }
@@ -2542,7 +2542,7 @@ function buildCountryFlag() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: domainToDelete.id, password: password }),
                 });
-                if (response.ok) { numberInput.value = ''; passwordInput.value = ''; await loadDomains(); } 
+                if (response.ok) { numberInput.value = ''; passwordInput.value = ''; await loadDomains(); }
                 else { alert('Failed to delete domain: ' + await response.text()); }
             } catch (error) { console.error('Error deleting domain:', error); alert('An error occurred while deleting the domain.'); }
         }
