@@ -927,6 +927,18 @@ let pathinfo = "/Free-VPN-CF-Geo-Project/";
 
 // Constants
 const SIDEBAR_COMPONENT = `
+<style>
+    .sidebar {
+        transition: transform 0.3s ease-in-out;
+    }
+    .sidebar-open {
+        transform: translateX(0) !important;
+    }
+    .sidebar-closed {
+        transform: translateX(-100%) !important;
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
