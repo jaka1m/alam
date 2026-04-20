@@ -2476,14 +2476,14 @@ function buildCountryFlag() {
                 for (const row of rows) {
                     const ipPort = row.dataset.ipPort;
                     const statusElement = row.querySelector('.proxy-status');
-                    const healthCheckUrl = `/geo-ip?ip=${ipPort}`;
+                    const healthCheckUrl = \`/geo-ip?ip=\${ipPort}\`;
                     try {
                         const response = await fetch(healthCheckUrl);
                         if (!response.ok) throw new Error('Network response was not ok');
                         const data = await response.json();
                         const status = data.status || 'UNKNOWN';
                         let delay = parseFloat(data.delay) || NaN;
-                        let delayHTML = !isNaN(delay) ? `<span class="delay-badge">(${Math.round(delay)}ms)</span>` : '<span class="delay-badge">(N/A)</span>';
+                        let delayHTML = !isNaN(delay) ? \`<span class="delay-badge">(\${Math.round(delay)}ms)</span>\` : '<span class="delay-badge">(N/A)</span>';
                         let statusHTML = status === 'ACTIVE' ? '<div class="status-badge neon-active"><i class="fas fa-bolt"></i><span>ACTIVE</span></div>' : '<div class="status-badge neon-dead"><i class="fas fa-times-circle"></i><span>DEAD</span></div>';
                         statusElement.innerHTML = statusHTML + delayHTML;
                     } catch (error) {
@@ -2504,7 +2504,7 @@ function buildCountryFlag() {
                 const response = await fetch('/api/v1/domains');
                 if (response.ok) {
                     domains = await response.json();
-                    domainsContainer.innerHTML = domains.map((d, i) => `<div>${i + 1}. ${d.hostname}</div>`).join('');
+                    domainsContainer.innerHTML = domains.map((d, i) => \`<div>\${i + 1}. \${d.hostname}</div>\`).join('');
                 }
             } catch (error) { console.error('Error loading domains:', error); }
         }
