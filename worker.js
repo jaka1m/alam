@@ -1811,45 +1811,6 @@ function mamangenerateHTML() {
       color: var(--primary);
     }
 
-    #resultTable {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 25px;
-    }
-
-    #resultTable thead {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
-    }
-
-    #resultTable th {
-      padding: 15px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-primary);
-      border-bottom: 2px solid var(--glass-border);
-      font-family: 'Space Grotesk', sans-serif;
-    }
-
-    #resultTable td {
-      padding: 15px;
-      border-bottom: 1px solid var(--glass-border);
-      color: var(--text-secondary);
-    }
-
-    #resultTable tr:last-child td {
-      border-bottom: none;
-    }
-
-    #resultTable tr:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    #resultTable td:first-child {
-      font-weight: 600;
-      color: var(--text-primary);
-      width: 30%;
-    }
-
     .status-active {
       color: var(--success) !important;
       font-weight: 600;
@@ -1974,18 +1935,6 @@ function mamangenerateHTML() {
         justify-content: center;
       }
 
-      #resultTable th,
-      #resultTable td {
-        padding: 12px 10px;
-        font-size: 0.9rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.8rem;
-      }
-
       .subtitle {
         font-size: 1rem;
       }
@@ -2026,29 +1975,56 @@ function mamangenerateHTML() {
 
     <div class="results-section">
       <h2 class="section-title"><i class="fas fa-info-circle"></i> Proxy Details</h2>
-      <table id="resultTable">
-        <thead>
-          <tr>
-            <th>Key</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Proxy</td><td>-</td></tr>
-          <tr><td>ISP</td><td>-</td></tr>
-          <tr><td>IP</td><td>-</td></tr>
-          <tr><td>Port</td><td>-</td></tr>
-          <tr><td>ASN</td><td>-</td></tr>
-          <tr><td>Country</td><td>-</td></tr>
-          <tr><td>City</td><td>-</td></tr>
-          <tr><td>Flag</td><td>-</td></tr>
-          <tr><td>Timezone</td><td>-</td></tr>
-          <tr><td>Latitude</td><td>-</td></tr>
-          <tr><td>Longitude</td><td>-</td></tr>
-          <tr><td>Delay</td><td class="delay-good">-</td></tr>
-          <tr><td>Status</td><td class="status-inactive">-</td></tr>
-        </tbody>
-      </table>
+      <div id="proxyResults" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Proxy</span>
+            <span class="text-lg text-white font-semibold" data-key="proxy">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">ISP</span>
+            <span class="text-lg text-white font-semibold" data-key="isp">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">IP Address</span>
+            <span class="text-lg text-white font-semibold" data-key="ip">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Port</span>
+            <span class="text-lg text-white font-semibold" data-key="port">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">ASN</span>
+            <span class="text-lg text-white font-semibold" data-key="asn">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Country</span>
+            <span class="text-lg text-white font-semibold" data-key="country">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">City</span>
+            <span class="text-lg text-white font-semibold" data-key="city">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Timezone</span>
+            <span class="text-lg text-white font-semibold" data-key="timezone">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Latitude</span>
+            <span class="text-lg text-white font-semibold" data-key="latitude">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Longitude</span>
+            <span class="text-lg text-white font-semibold" data-key="longitude">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10 border-l-4 border-l-blue-500">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Delay</span>
+            <span class="text-2xl text-blue-400 font-bold" data-key="delay">-</span>
+        </div>
+        <div class="card-glass p-4 flex flex-col justify-center border border-white/10 border-l-4 border-l-green-500">
+            <span class="text-xs text-gray-400 uppercase font-bold tracking-wider">Status</span>
+            <span class="text-lg font-bold" data-key="status">-</span>
+        </div>
+      </div>
     </div>
 
     <div class="map-section">
@@ -2157,26 +2133,28 @@ function mamangenerateHTML() {
     }
 
     function updateTable(data) {
-        const tbody = document.getElementById("resultTable").querySelector("tbody");
+        const container = document.getElementById("proxyResults");
+        const elements = container.querySelectorAll("[data-key]");
 
-        tbody.querySelectorAll("tr").forEach(function (row) {
-            const key = row.querySelector("td").textContent.toLowerCase();
-            const valueCell = row.querySelectorAll("td")[1];
-            
-            if (data[key] !== undefined && data[key] !== null) {
-                valueCell.textContent = data[key];
-                
-                // Apply special styling for status and delay
+        elements.forEach(function (el) {
+            const key = el.getAttribute("data-key");
+            let value = data[key];
+
+            if (value !== undefined && value !== null) {
                 if (key === 'status') {
-                    valueCell.className = data[key] === 'active' ? 'status-active' : 'status-inactive';
+                    el.textContent = value;
+                    el.className = 'text-lg font-bold ' + (value.includes('Aktif') ? 'text-green-400' : 'text-red-400');
                 } else if (key === 'delay') {
-                    const delay = parseInt(data[key]);
-                    if (delay < 100) valueCell.className = 'delay-good';
-                    else if (delay < 500) valueCell.className = 'delay-medium';
-                    else valueCell.className = 'delay-poor';
+                    el.textContent = value;
+                    const delay = parseInt(value);
+                    if (delay < 100) el.className = 'text-2xl text-green-400 font-bold';
+                    else if (delay < 500) el.className = 'text-2xl text-yellow-400 font-bold';
+                    else el.className = 'text-2xl text-red-400 font-bold';
+                } else {
+                    el.textContent = value;
                 }
             } else {
-                valueCell.textContent = "-";
+                el.textContent = "-";
             }
         });
     }
@@ -4191,21 +4169,8 @@ function buildCountryFlag() {
 
     const configType = url.searchParams.get('configType') || 'tls';
 
-    let tableHTML = `
-    <div class="overflow-x-auto relative shadow-lg rounded-lg mt-6 bg-gray-800 bg-opacity-40 border border-gray-700">
-    <table class="w-full text-sm text-left text-gray-400">
-        <thead class="text-xs text-gray-400 uppercase bg-gray-700 bg-opacity-50">
-            <tr>
-                <th scope="col" class="py-3 px-6 text-center">No.</th>
-                <th scope="col" class="py-3 px-6 text-center">IP PORT</th>
-                <th scope="col" class="py-3 px-6 text-center">Status</th>
-                <th scope="col" class="py-3 px-6 text-center">Country</th>
-                <th scope="col" class="py-3 px-6 text-center">ISP</th>
-                <th scope="col" class="py-3 px-6 text-center">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            
+    let cardsHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
     `;
 
     visibleConfigs.forEach((config, index) => {
@@ -4253,43 +4218,56 @@ function buildCountryFlag() {
             ssRibet = ssNTLSRibet;
         }
 
-        tableHTML += `
-            <tr class="border-b border-gray-700 hover:bg-gray-600 bg-opacity-20 hover:bg-opacity-40 proxy-row" data-ip-port="${ipPort}">
-            <td class="py-4 px-6">${rowNumber}.</td>
-            <td class="py-4 px-6">${config.ip}:${config.port}</td>
-            <td class="py-4 px-6 proxy-status status-delay-cell"><div class="loading-container"><div class="spinner"></div></div></td>
-            <td class="py-4 px-6">
-                <div class="flex items-center">
-                    <img width="20" src="https://hatscripts.github.io/circle-flags/flags/${config.countryCode.toLowerCase()}.svg" alt="${config.countryCode} flag" class="mr-2"/>
-                    ${config.countryCode}
+        cardsHTML += `
+        <div class="card-glass p-5 border border-white/10 hover:border-green-500/50 transition-all duration-300 proxy-row group" data-ip-port="${ipPort}">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold border border-green-500/30">
+                        ${rowNumber}
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold text-lg">${config.ip}</h3>
+                        <p class="text-gray-400 text-xs font-mono">Port: ${config.port}</p>
+                    </div>
                 </div>
-            </td>
-            <td class="py-4 px-6">${config.isp}</td>
-            <td class="py-4 px-6 text-center">
-                <div class="flex justify-center space-x-2">
-                    <button class="bg-blue-600 hover:bg-blue-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
-                            onclick='showOptions("VLess", "${vlessRibet.replace(/"/g, '&quot;')}", "${vlessSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-                        VLESS
-                    </button>
-                    <button class="bg-purple-600 hover:bg-purple-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
-                            onclick='showOptions("Trojan", "${trojanRibet.replace(/"/g, '&quot;')}", "${trojanSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-                        TROJAN
-                    </button>
-                    <button class="bg-green-600 hover:bg-green-700 rounded-md px-3 py-1 text-white font-semibold transition-colors duration-200 text-xs"
-                            onclick='showOptions("SS", "${ssRibet.replace(/"/g, '&quot;')}", "${ssSimple.replace(/"/g, '&quot;')}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
-                        SHADOWSOCKS
-                    </button>
+                <div class="proxy-status status-delay-cell h-8 flex items-center">
+                    <div class="loading-container"><div class="spinner"></div></div>
                 </div>
-            </td>
-        </tr>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">Country</span>
+                    <div class="flex items-center gap-2 text-white font-medium">
+                        <img width="18" src="https://hatscripts.github.io/circle-flags/flags/${config.countryCode.toLowerCase()}.svg" alt="${config.countryCode} flag" class="rounded-full shadow-sm"/>
+                        ${config.countryCode}
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-400">ISP</span>
+                    <span class="text-white font-medium truncate max-w-[150px]" title="${config.isp}">${config.isp}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <button class="bg-blue-600/80 hover:bg-blue-600 py-2 rounded-lg text-white text-[10px] font-bold transition-all active:scale-95"
+                        onclick='showOptions("VLess", "${vlessRibet.replace(/"/g, "&quot;")}", "${vlessSimple.replace(/"/g, "&quot;")}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                    VLESS
+                </button>
+                <button class="bg-purple-600/80 hover:bg-purple-700 py-2 rounded-lg text-white text-[10px] font-bold transition-all active:scale-95"
+                        onclick='showOptions("Trojan", "${trojanRibet.replace(/"/g, "&quot;")}", "${trojanSimple.replace(/"/g, "&quot;")}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                    TROJAN
+                </button>
+                <button class="bg-green-600/80 hover:bg-green-600 py-2 rounded-lg text-white text-[10px] font-bold transition-all active:scale-95"
+                        onclick='showOptions("SS", "${ssRibet.replace(/"/g, "&quot;")}", "${ssSimple.replace(/"/g, "&quot;")}", ${JSON.stringify(config).replace(/'/g, "&#39;")})'>
+                    SS
+                </button>
+            </div>
+        </div>
         `;
     });
 
-    tableHTML += `
-            </tbody>
-        </table>
-    </div>
-    `;
+    cardsHTML += `</div>`;
 
     const showOptionsScript = `
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
@@ -4439,6 +4417,44 @@ function buildCountryFlag() {
     --footer-bg-light: rgba(240, 244, 248, 0.9);
     --footer-bg-dark: rgba(0, 0, 0, 0.8);
 }
+.card-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-glass:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(34, 197, 94, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+.action-btn-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border-radius: 8px;
+    color: white;
+    transition: all 0.2s;
+}
+.action-btn-blue:hover { opacity: 0.9; transform: scale(1.02); }
+
+.action-btn-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    border-radius: 8px;
+    color: white;
+    transition: all 0.2s;
+}
+.action-btn-purple:hover { opacity: 0.9; transform: scale(1.02); }
+
+.action-btn-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 8px;
+    color: white;
+    transition: all 0.2s;
+}
+.action-btn-green:hover { opacity: 0.9; transform: scale(1.02); }
+
 
 @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -5274,16 +5290,6 @@ select:focus {
     .quantum-container {
         max-width: 900px;
     }
-    .quantum-container .table-wrapper {
-        width: calc(100% + 40px);
-        margin-left: -20px;
-        margin-right: -20px;
-        padding-left: 10px;
-        padding-right: 10px;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-    }
 }
 
 @media (max-width: 768px) {
@@ -5341,7 +5347,7 @@ select:focus {
     style="border-width: 1px; border-style: solid; border-color: #28a745; height: 55px; border-radius: 10px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); overflow-x: auto; overflow-y: hidden;">
     ${buildCountryFlag()}
 </div>
-                ${tableHTML}
+                ${cardsHTML}
                 ${showOptionsScript}
                 
                 <script>
