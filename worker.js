@@ -2691,33 +2691,32 @@ export default {
           return new Response("IP parameter is required", { status: 400 });
         }
 
-        // Call external API using CHECK_API
-        const apiResponse = await fetch(`${CHECK_API}${ip}`);
-        if (!apiResponse.ok) {
-          return new Response("Failed to fetch IP information", { status: apiResponse.status });
+        const cache = caches.default;
+        const cacheUrl = new URL(request.url);
+        const cacheKey = new Request(cacheUrl.toString(), request);
+        let response = await cache.match(cacheKey);
+
+        if (!response) {
+          // Call external API using CHECK_API
+          const apiResponse = await fetch(`${CHECK_API}${ip}`);
+          if (!apiResponse.ok) {
+            return new Response("Failed to fetch IP information", { status: apiResponse.status });
+          }
+
+          const data = await apiResponse.json();
+          response = new Response(JSON.stringify(data), {
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "public, max-age=600"
+            },
+          });
+          ctx.waitUntil(cache.put(cacheKey, response.clone()));
         }
 
-        const data = await apiResponse.json();
-        return new Response(JSON.stringify(data), {
-          headers: { "Content-Type": "application/json" },
-        });
-      }      
-
-      async function updateProxies() {
-  const proxies = await getProxyList();
-        console.log("Proxy list updated (getProxyList called).");
+        return response;
       }
 
 
-      ctx.waitUntil(
-
-        (async function periodicUpdate() {
-
-          await updateProxies();
-
-        })()
-
-      );
 
 
 
@@ -2945,7 +2944,7 @@ case "/checker/check":
 
   const paramss = url.searchParams;
 
-  return await handleCheck(paramss);
+  return await handleCheck(paramss, request, ctx);
 
   break;
 
@@ -2985,7 +2984,7 @@ return new Response(configs);
 
 
 
-async function handleCheck(paramss) {
+async function handleCheck(paramss, request, ctx) {
 
   const ipPort = paramss.get("ip");
 
@@ -3012,6 +3011,12 @@ async function handleCheck(paramss) {
   }
 
 
+
+  const cache = caches.default;
+  const cacheUrl = new URL(request.url);
+  const cacheKey = new Request(cacheUrl.toString(), request);
+  let response = await cache.match(cacheKey);
+  if (response) return response;
 
   const apiUrl = `https://api-check.web.id/check?ip=${ip}:${port}`;
 
@@ -3085,11 +3090,14 @@ async function handleCheck(paramss) {
 
 
 
-    return new Response(JSON.stringify(responseData, null, 2), {
-
-      headers: { "Content-Type": "application/json" },
-
+    const finalResponse = new Response(JSON.stringify(responseData, null, 2), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=600"
+      },
     });
+    ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
+    return finalResponse;
 
   } catch (error) {
 
@@ -10553,6 +10561,11 @@ select:focus {
                         <option value="non-tls" ${selectedConfigType === 'non-tls' ? 'selected' : ''}>NON TLS</option> 
 
                     </select>
+                    <button id="refresh-status-btn" class="bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 rounded-full border-2 border-gray-900 p-2 transition-colors duration-200 shadow-lg z-50" title="Refresh Proxy Status">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                    </button>
 
                     <a href="${telegrambot}" target="_blank">
 
@@ -10762,6 +10775,12 @@ select:focus {
 
 
 
+                    const refreshBtn = document.getElementById("refresh-status-btn");
+                    if (refreshBtn) {
+                        refreshBtn.addEventListener("click", () => {
+                            checkAllProxies();
+                        });
+                    }
                     checkAllProxies();
 
                     

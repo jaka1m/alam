@@ -1,0 +1,14 @@
+npm warn exec The following package was not found and will be installed: wrangler@4.84.1
+
+ ⛅️ wrangler 4.84.1
+───────────────────
+⎔ Starting local server...
+[wrangler:info] Ready on http://localhost:8787
+[wrangler:info] GET /web 200 OK (323ms)
+[wrangler:info] GET /geo-ip 200 OK (2502ms)
+[wrangler:info] GET /geo-ip 200 OK (2248ms)
+[wrangler:info] GET /geo-ip 200 OK (2650ms)
+[wrangler:info] GET /geo-ip 200 OK (2293ms)
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mkj::getCaughtExceptionAsKj() = kj/async-io-unix.c++:186: disconnected: ::write(fd, buffer.begin(), buffer.size()): Broken pipe[0m
+
+  stack: /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@518c981 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@518d631 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@36f115f /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@36f13a5 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@514fe18 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@37498e3 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@374d437 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@374d7c8 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2df4ab0 /home/jules/.npm/_npx/32026684e21afda6/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2018ad7
