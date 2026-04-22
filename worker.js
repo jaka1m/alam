@@ -308,7 +308,7 @@ DOMAIN-SUFFIX,bdapi-ads.realmemobile.com, AdBlock
 DOMAIN-SUFFIX,grs.hicloud.com, AdBlock
 DOMAIN-SUFFIX,weather-analytics-events.apple.com, AdBlock
 DOMAIN-SUFFIX,notes-analytics-events.apple.com, AdBlock
-FINAL,Select Group`;`;
+FINAL,Select Group`;
 
 
  const scriptConfig = {
