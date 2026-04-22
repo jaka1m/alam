@@ -1,4 +1,315 @@
 import { connect } from "cloudflare:sockets";
+const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim();
+const CLASH_RULES = `\n[Rule]\nMATCH,Select Group\nDOMAIN-SUFFIX,pagead2.googlesyndication.com, AdBlock
+DOMAIN-SUFFIX,pagead2.googleadservices.com, AdBlock
+DOMAIN-SUFFIX,afs.googlesyndication.com, AdBlock
+DOMAIN-SUFFIX,ads.google.com, AdBlock
+DOMAIN-SUFFIX,adservice.google.com, AdBlock
+DOMAIN-SUFFIX,googleadservices.com, AdBlock
+DOMAIN-SUFFIX,static.media.net, AdBlock
+DOMAIN-SUFFIX,media.net, AdBlock
+DOMAIN-SUFFIX,adservetx.media.net, AdBlock
+DOMAIN-SUFFIX,mediavisor.doubleclick.net, AdBlock
+DOMAIN-SUFFIX,m.doubleclick.net, AdBlock
+DOMAIN-SUFFIX,static.doubleclick.net, AdBlock
+DOMAIN-SUFFIX,doubleclick.net, AdBlock
+DOMAIN-SUFFIX,ad.doubleclick.net, AdBlock
+DOMAIN-SUFFIX,fastclick.com, AdBlock
+DOMAIN-SUFFIX,fastclick.net, AdBlock
+DOMAIN-SUFFIX,media.fastclick.net, AdBlock
+DOMAIN-SUFFIX,cdn.fastclick.net, AdBlock
+DOMAIN-SUFFIX,adtago.s3.amazonaws.com, AdBlock
+DOMAIN-SUFFIX,analyticsengine.s3.amazonaws.com, AdBlock
+DOMAIN-SUFFIX,advice-ads.s3.amazonaws.com, AdBlock
+DOMAIN-SUFFIX,affiliationjs.s3.amazonaws.com, AdBlock
+DOMAIN-SUFFIX,advertising-api-eu.amazon.com, AdBlock
+DOMAIN-SUFFIX,amazonclix.com, AdBlock, AdBlock
+DOMAIN-SUFFIX,assoc-amazon.com, AdBlock
+DOMAIN-SUFFIX,ads.yahoo.com, AdBlock
+DOMAIN-SUFFIX,adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,global.adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,us.adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,adspecs.yahoo.com, AdBlock
+DOMAIN-SUFFIX,br.adspecs.yahoo.com, AdBlock
+DOMAIN-SUFFIX,latam.adspecs.yahoo.com, AdBlock
+DOMAIN-SUFFIX,ush.adspecs.yahoo.com, AdBlock
+DOMAIN-SUFFIX,advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,de.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,es.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,fr.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,in.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,it.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,sea.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,uk.advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,analytics.yahoo.com, AdBlock
+DOMAIN-SUFFIX,cms.analytics.yahoo.com, AdBlock
+DOMAIN-SUFFIX,opus.analytics.yahoo.com, AdBlock
+DOMAIN-SUFFIX,sp.analytics.yahoo.com, AdBlock
+DOMAIN-SUFFIX,comet.yahoo.com, AdBlock
+DOMAIN-SUFFIX,log.fc.yahoo.com, AdBlock
+DOMAIN-SUFFIX,ganon.yahoo.com, AdBlock
+DOMAIN-SUFFIX,gemini.yahoo.com, AdBlock
+DOMAIN-SUFFIX,beap.gemini.yahoo.com, AdBlock
+DOMAIN-SUFFIX,geo.yahoo.com, AdBlock
+DOMAIN-SUFFIX,marketingsolutions.yahoo.com, AdBlock
+DOMAIN-SUFFIX,pclick.yahoo.com, AdBlock
+DOMAIN-SUFFIX,analytics.query.yahoo.com, AdBlock
+DOMAIN-SUFFIX,geo.query.yahoo.com, AdBlock
+DOMAIN-SUFFIX,onepush.query.yahoo.com, AdBlock
+DOMAIN-SUFFIX,bats.video.yahoo.com, AdBlock
+DOMAIN-SUFFIX,visit.webhosting.yahoo.com, AdBlock
+DOMAIN-SUFFIX,ads.yap.yahoo.com, AdBlock
+DOMAIN-SUFFIX,m.yap.yahoo.com, AdBlock
+DOMAIN-SUFFIX,partnerads.ysm.yahoo.com, AdBlock
+DOMAIN-SUFFIX,appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,19534.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,3.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,30488.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,4.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,report.appmetrica.yandex.net, AdBlock
+DOMAIN-SUFFIX,extmaps-api.yandex.net, AdBlock
+DOMAIN-SUFFIX,analytics.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,banners.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,banners-slb.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,startup.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,offerwall.yandex.net, AdBlock
+DOMAIN-SUFFIX,adfox.yandex.ru, AdBlock
+DOMAIN-SUFFIX,matchid.adfox.yandex.ru, AdBlock
+DOMAIN-SUFFIX,adsdk.yandex.ru, AdBlock
+DOMAIN-SUFFIX,an.yandex.ru, AdBlock
+DOMAIN-SUFFIX,redirect.appmetrica.yandex.ru, AdBlock
+DOMAIN-SUFFIX,awaps.yandex.ru, AdBlock
+DOMAIN-SUFFIX,awsync.yandex.ru, AdBlock
+DOMAIN-SUFFIX,bs.yandex.ru, AdBlock
+DOMAIN-SUFFIX,bs-meta.yandex.ru, AdBlock
+DOMAIN-SUFFIX,clck.yandex.ru, AdBlock
+DOMAIN-SUFFIX,informer.yandex.ru, AdBlock
+DOMAIN-SUFFIX,kiks.yandex.ru, AdBlock
+DOMAIN-SUFFIX,grade.market.yandex.ru, AdBlock
+DOMAIN-SUFFIX,mc.yandex.ru, AdBlock
+DOMAIN-SUFFIX,metrika.yandex.ru, AdBlock
+DOMAIN-SUFFIX,click.sender.yandex.ru, AdBlock
+DOMAIN-SUFFIX,share.yandex.ru, AdBlock
+DOMAIN-SUFFIX,yandexadexchange.net, AdBlock
+DOMAIN-SUFFIX,mobile.yandexadexchange.net, AdBlock
+DOMAIN-SUFFIX,google-analytics.com, AdBlock
+DOMAIN-SUFFIX,ssl.google-analytics.com, AdBlock
+DOMAIN-SUFFIX,api-hotjar.com, AdBlock
+DOMAIN-SUFFIX,hotjar-analytics.com, AdBlock
+DOMAIN-SUFFIX,hotjar.com, AdBlock
+DOMAIN-SUFFIX,static.hotjar.com, AdBlock
+DOMAIN-SUFFIX,mouseflow.com, AdBlock
+DOMAIN-SUFFIX,a.mouseflow.com, AdBlock
+DOMAIN-SUFFIX,freshmarketer.com, AdBlock
+DOMAIN-SUFFIX,luckyorange.com, AdBlock
+DOMAIN-SUFFIX,luckyorange.net, AdBlock
+DOMAIN-SUFFIX,cdn.luckyorange.com, AdBlock
+DOMAIN-SUFFIX,w1.luckyorange.com, AdBlock
+DOMAIN-SUFFIX,upload.luckyorange.net, AdBlock
+DOMAIN-SUFFIX,cs.luckyorange.net, AdBlock
+DOMAIN-SUFFIX,settings.luckyorange.net, AdBlock
+DOMAIN-SUFFIX,stats.wp.com, AdBlock
+DOMAIN-SUFFIX,notify.bugsnag.com, AdBlock
+DOMAIN-SUFFIX,sessions.bugsnag.com, AdBlock
+DOMAIN-SUFFIX,api.bugsnag.com, AdBlock
+DOMAIN-SUFFIX,app.bugsnag.com, AdBlock
+DOMAIN-SUFFIX,browser.sentry-cdn.com, AdBlock
+DOMAIN-SUFFIX,app.getsentry.com, AdBlock
+DOMAIN-SUFFIX,pixel.facebook.com, AdBlock
+DOMAIN-SUFFIX,analytics.facebook.com, AdBlock
+DOMAIN-SUFFIX,ads.facebook.com, AdBlock
+DOMAIN-SUFFIX,an.facebook.com, AdBlock
+DOMAIN-SUFFIX,ads-api.twitter.com, AdBlock
+DOMAIN-SUFFIX,advertising.twitter.com, AdBlock
+DOMAIN-SUFFIX,ads-twitter.com, AdBlock
+DOMAIN-SUFFIX,static.ads-twitter.com, AdBlock
+DOMAIN-SUFFIX,ads.linkedin.com, AdBlock
+DOMAIN-SUFFIX,analytics.pointdrive.linkedin.com, AdBlock
+DOMAIN-SUFFIX,ads.pinterest.com, AdBlock
+DOMAIN-SUFFIX,log.pinterest.com, AdBlock
+DOMAIN-SUFFIX,ads-dev.pinterest.com, AdBlock
+DOMAIN-SUFFIX,analytics.pinterest.com, AdBlock
+DOMAIN-SUFFIX,trk.pinterest.com, AdBlock
+DOMAIN-SUFFIX,trk2.pinterest.com, AdBlock
+DOMAIN-SUFFIX,widgets.pinterest.com, AdBlock
+DOMAIN-SUFFIX,ads.reddit.com, AdBlock
+DOMAIN-SUFFIX,rereddit.com, AdBlock
+DOMAIN-SUFFIX,events.redditmedia.com, AdBlock
+DOMAIN-SUFFIX,d.reddit.com, AdBlock
+DOMAIN-SUFFIX,ads-sg.tiktok.com, AdBlock
+DOMAIN-SUFFIX,analytics-sg.tiktok.com, AdBlock
+DOMAIN-SUFFIX,ads.tiktok.com, AdBlock
+DOMAIN-SUFFIX,analytics.tiktok.com, AdBlock
+DOMAIN-SUFFIX,ads.youtube.com, AdBlock
+DOMAIN-SUFFIX,youtube.cleverads.vn, AdBlock
+DOMAIN-SUFFIX,ads.yahoo.com, AdBlock
+DOMAIN-SUFFIX,adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,global.adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,us.adserver.yahoo.com, AdBlock
+DOMAIN-SUFFIX,adspecs.yahoo.com, AdBlock
+DOMAIN-SUFFIX,advertising.yahoo.com, AdBlock
+DOMAIN-SUFFIX,analytics.yahoo.com, AdBlock
+DOMAIN-SUFFIX,analytics.query.yahoo.com, AdBlock
+DOMAIN-SUFFIX,ads.yap.yahoo.com, AdBlock
+DOMAIN-SUFFIX,m.yap.yahoo.com, AdBlock
+DOMAIN-SUFFIX,partnerads.ysm.yahoo.com, AdBlock
+DOMAIN-SUFFIX,appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,19534.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,3.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,30488.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,4.redirect.appmetrica.yandex.com, AdBlock
+DOMAIN-SUFFIX,report.appmetrica.yandex.net, AdBlock
+DOMAIN-SUFFIX,extmaps-api.yandex.net, AdBlock
+DOMAIN-SUFFIX,analytics.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,banners.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,banners-slb.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,startup.mobile.yandex.net, AdBlock
+DOMAIN-SUFFIX,offerwall.yandex.net, AdBlock
+DOMAIN-SUFFIX,adfox.yandex.ru, AdBlock
+DOMAIN-SUFFIX,matchid.adfox.yandex.ru, AdBlock
+DOMAIN-SUFFIX,adsdk.yandex.ru, AdBlock
+DOMAIN-SUFFIX,an.yandex.ru, AdBlock
+DOMAIN-SUFFIX,redirect.appmetrica.yandex.ru, AdBlock
+DOMAIN-SUFFIX,awaps.yandex.ru, AdBlock
+DOMAIN-SUFFIX,awsync.yandex.ru, AdBlock
+DOMAIN-SUFFIX,bs.yandex.ru, AdBlock
+DOMAIN-SUFFIX,bs-meta.yandex.ru, AdBlock
+DOMAIN-SUFFIX,clck.yandex.ru, AdBlock
+DOMAIN-SUFFIX,informer.yandex.ru, AdBlock
+DOMAIN-SUFFIX,kiks.yandex.ru, AdBlock
+DOMAIN-SUFFIX,grade.market.yandex.ru, AdBlock
+DOMAIN-SUFFIX,mc.yandex.ru, AdBlock
+DOMAIN-SUFFIX,metrika.yandex.ru, AdBlock
+DOMAIN-SUFFIX,click.sender.yandex.ru, AdBlock
+DOMAIN-SUFFIX,share.yandex.ru, AdBlock
+DOMAIN-SUFFIX,yandexadexchange.net, AdBlock
+DOMAIN-SUFFIX,mobile.yandexadexchange.net, AdBlock
+DOMAIN-SUFFIX,bdapi-in-ads.realmemobile.com, AdBlock
+DOMAIN-SUFFIX,adsfs.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,adx.ads.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,bdapi.ads.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,ck.ads.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,data.ads.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,g1.ads.oppomobile.com, AdBlock
+DOMAIN-SUFFIX,api.ad.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,app.chat.xiaomi.net, AdBlock
+DOMAIN-SUFFIX,data.mistat.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,data.mistat.intl.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,data.mistat.india.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,data.mistat.rus.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,sdkconfig.ad.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,sdkconfig.ad.intl.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,globalapi.ad.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,www.cdn.ad.xiaomi.com, AdBlock
+DOMAIN-SUFFIX,tracking.miui.com, AdBlock
+DOMAIN-SUFFIX,sa.api.intl.miui.com, AdBlock
+DOMAIN-SUFFIX,tracking.miui.com, AdBlock
+DOMAIN-SUFFIX,tracking.intl.miui.com, AdBlock
+DOMAIN-SUFFIX,tracking.india.miui.com, AdBlock
+DOMAIN-SUFFIX,tracking.rus.miui.com, AdBlock
+DOMAIN-SUFFIX,analytics.oneplus.cn, AdBlock
+DOMAIN-SUFFIX,click.oneplus.cn, AdBlock
+DOMAIN-SUFFIX,click.oneplus.com, AdBlock
+DOMAIN-SUFFIX,open.oneplus.net, AdBlock
+DOMAIN-SUFFIX,metrics.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics1.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics2.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics3.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics4.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics5.data.hicloud.com, AdBlock
+DOMAIN-SUFFIX,logservice.hicloud.com, AdBlock
+DOMAIN-SUFFIX,logservice1.hicloud.com, AdBlock
+DOMAIN-SUFFIX,metrics-dra.dt.hicloud.com, AdBlock
+DOMAIN-SUFFIX,logbak.hicloud.com, AdBlock
+DOMAIN-SUFFIX,ad.samsungadhub.com, AdBlock
+DOMAIN-SUFFIX,samsungadhub.com, AdBlock
+DOMAIN-SUFFIX,samsungads.com, AdBlock
+DOMAIN-SUFFIX,smetrics.samsung.com, AdBlock
+DOMAIN-SUFFIX,nmetrics.samsung.com, AdBlock
+DOMAIN-SUFFIX,samsung-com.112.2o7.net, AdBlock
+DOMAIN-SUFFIX,business.samsungusa.com, AdBlock
+DOMAIN-SUFFIX,analytics.samsungknox.com, AdBlock
+DOMAIN-SUFFIX,bigdata.ssp.samsung.com, AdBlock
+DOMAIN-SUFFIX,analytics-api.samsunghealthcn.com, AdBlock
+DOMAIN-SUFFIX,config.samsungads.com, AdBlock
+DOMAIN-SUFFIX,metrics.apple.com, AdBlock
+DOMAIN-SUFFIX,securemetrics.apple.com, AdBlock
+DOMAIN-SUFFIX,supportmetrics.apple.com, AdBlock
+DOMAIN-SUFFIX,metrics.icloud.com, AdBlock
+DOMAIN-SUFFIX,metrics.mzstatic.com, AdBlock
+DOMAIN-SUFFIX,dzc-metrics.mzstatic.com, AdBlock
+DOMAIN-SUFFIX,books-analytics-events.news.apple-dns.net, AdBlock
+DOMAIN-SUFFIX,books-analytics-events.apple.com, AdBlock
+DOMAIN-SUFFIX,stocks-analytics-events.apple.com, AdBlock
+DOMAIN-SUFFIX,stocks-analytics-events.news.apple-dns.net, AdBlock
+DOMAIN-KEYWORD,pagead2, AdBlock
+DOMAIN-KEYWORD,adservice, AdBlock
+DOMAIN-KEYWORD,.ads, AdBlock
+DOMAIN-KEYWORD,.ad, AdBlock
+DOMAIN-KEYWORD,adservetx, AdBlock
+DOMAIN-KEYWORD,mediavisor, AdBlock
+DOMAIN-KEYWORD,adtago, AdBlock
+DOMAIN-KEYWORD,analyticsengine, AdBlock
+DOMAIN-KEYWORD,advice-ads, AdBlock
+DOMAIN-KEYWORD,affiliationjs, AdBlock
+DOMAIN-KEYWORD,advertising, AdBlock
+DOMAIN-KEYWORD,adserver, AdBlock
+DOMAIN-KEYWORD,pclick, AdBlock
+DOMAIN-KEYWORD,partnerads, AdBlock
+DOMAIN-KEYWORD,appmetrica, AdBlock
+DOMAIN-KEYWORD,adfox, AdBlock
+DOMAIN-KEYWORD,adsdk, AdBlock
+DOMAIN-KEYWORD,clck, AdBlock
+DOMAIN-KEYWORD,metrika, AdBlock
+DOMAIN-KEYWORD,api-hotjar, AdBlock
+DOMAIN-KEYWORD,hotjar-analytics, AdBlock
+DOMAIN-KEYWORD,hotjar, AdBlock
+DOMAIN-KEYWORD,luckyorange, AdBlock
+DOMAIN-KEYWORD,bugsnag, AdBlock
+DOMAIN-KEYWORD,sentry-cdn, AdBlock
+DOMAIN-KEYWORD,getsentry, AdBlock
+DOMAIN-KEYWORD,ads-api, AdBlock
+DOMAIN-KEYWORD,ads-twitter, AdBlock
+DOMAIN-KEYWORD,pointdrive, AdBlock
+DOMAIN-KEYWORD,ads-dev, AdBlock
+DOMAIN-KEYWORD,trk, AdBlock
+DOMAIN-KEYWORD,cleverads, AdBlock
+DOMAIN-KEYWORD,ads-sg, AdBlock
+DOMAIN-KEYWORD,analytics-sg, AdBlock
+DOMAIN-KEYWORD,adspecs, AdBlock
+DOMAIN-KEYWORD,adsfs, AdBlock
+DOMAIN-KEYWORD,adx, AdBlock
+DOMAIN-KEYWORD,tracking, AdBlock
+DOMAIN-KEYWORD,logservice, AdBlock
+DOMAIN-KEYWORD,logbak, AdBlock
+DOMAIN-KEYWORD,smetrics, AdBlock
+DOMAIN-KEYWORD,nmetrics, AdBlock
+DOMAIN-KEYWORD,securemetrics, AdBlock
+DOMAIN-KEYWORD,supportmetrics, AdBlock
+DOMAIN-KEYWORD,books-analytics, AdBlock
+DOMAIN-KEYWORD,stocks-analytics, AdBlock
+DOMAIN-SUFFIX,analytics.s3.amazonaws.com, AdBlock
+DOMAIN-SUFFIX,analytics.google.com, AdBlock
+DOMAIN-SUFFIX,click.googleanalytics.com, AdBlock
+DOMAIN-SUFFIX,events.reddit.com, AdBlock
+DOMAIN-SUFFIX,business-api.tiktok.com, AdBlock
+DOMAIN-SUFFIX,log.byteoversea.com, AdBlock
+DOMAIN-SUFFIX,udc.yahoo.com, AdBlock
+DOMAIN-SUFFIX,udcm.yahoo.com, AdBlock
+DOMAIN-SUFFIX,auction.unityads.unity3d.com, AdBlock
+DOMAIN-SUFFIX,webview.unityads.unity3d.com, AdBlock
+DOMAIN-SUFFIX,config.unityads.unity3d.com, AdBlock
+DOMAIN-SUFFIX,adfstat.yandex.ru, AdBlock
+DOMAIN-SUFFIX,iot-eu-logser.realme.com, AdBlock
+DOMAIN-SUFFIX,iot-logser.realme.com, AdBlock
+DOMAIN-SUFFIX,bdapi-ads.realmemobile.com, AdBlock
+DOMAIN-SUFFIX,grs.hicloud.com, AdBlock
+DOMAIN-SUFFIX,weather-analytics-events.apple.com, AdBlock
+DOMAIN-SUFFIX,notes-analytics-events.apple.com, AdBlock
+FINAL,Select Group`;`;
+
 
  const scriptConfig = {
   ROOT_DOMAIN: "jak.biz.id",
@@ -202,7 +513,7 @@ const GALAXY_ANIMATION_COMPONENT = `
     .reset-btn:hover {
       background: rgba(255,255,255,0.3);
     }
-    
+
     /* Toggle switch */
     .toggle-group {
       display: flex;
@@ -248,7 +559,7 @@ const GALAXY_ANIMATION_COMPONENT = `
     input:checked + .toggle-slider:before {
       transform: translateX(20px);
     }
-    
+
     /* Animation presets */
     .preset-buttons {
       display: grid;
@@ -269,7 +580,7 @@ const GALAXY_ANIMATION_COMPONENT = `
     .preset-btn:hover {
       background: rgba(255,255,255,0.2);
     }
-    
+
     /* Control sections */
     .control-section {
       margin-bottom: 12px;
@@ -311,7 +622,7 @@ const GALAXY_ANIMATION_COMPONENT = `
   <!-- Color controls panel -->
   <div class="color-controls glass-card" id="colorControls">
     <h3>Galaxy Controls</h3>
-    
+
     <div class="control-section">
       <div class="section-title">
         <svg viewBox="0 0 24 24">
@@ -319,7 +630,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </svg>
         Colors
       </div>
-      
+
       <div class="control-group">
         <label for="insideColor">Inside Color</label>
         <div class="color-input">
@@ -327,7 +638,7 @@ const GALAXY_ANIMATION_COMPONENT = `
           <input type="text" id="insideColorText" value="#ff6030">
         </div>
       </div>
-      
+
       <div class="control-group">
         <label for="outsideColor">Outside Color</label>
         <div class="color-input">
@@ -336,7 +647,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </div>
       </div>
     </div>
-    
+
     <div class="control-section">
       <div class="section-title">
         <svg viewBox="0 0 24 24">
@@ -344,14 +655,14 @@ const GALAXY_ANIMATION_COMPONENT = `
         </svg>
         Particles
       </div>
-      
+
       <div class="control-group">
         <label for="particleSize">Particle Size: <span id="sizeValue">0.01</span></label>
         <div class="slider-control">
           <input type="range" id="particleSize" min="0.001" max="0.05" step="0.001" value="0.01">
         </div>
       </div>
-      
+
       <div class="control-group">
         <label for="particleCount">Particle Count: <span id="countValue">100000</span></label>
         <div class="slider-control">
@@ -359,7 +670,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </div>
       </div>
     </div>
-    
+
     <div class="control-section">
       <div class="section-title">
         <svg viewBox="0 0 24 24">
@@ -367,21 +678,21 @@ const GALAXY_ANIMATION_COMPONENT = `
         </svg>
         Animation
       </div>
-      
+
       <div class="control-group">
         <label for="spinFactor">Spin Factor: <span id="spinValue">3</span></label>
         <div class="slider-control">
           <input type="range" id="spinFactor" min="0.1" max="10" step="0.1" value="3">
         </div>
       </div>
-      
+
       <div class="control-group">
         <label for="branches">Branches: <span id="branchesValue">3</span></label>
         <div class="slider-control">
           <input type="range" id="branches" min="1" max="8" step="1" value="3">
         </div>
       </div>
-      
+
       <div class="control-group">
         <label for="randomness">Randomness: <span id="randomnessValue">5</span></label>
         <div class="slider-control">
@@ -389,7 +700,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </div>
       </div>
     </div>
-    
+
     <div class="control-section">
       <div class="section-title">
         <svg viewBox="0 0 24 24">
@@ -397,7 +708,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </svg>
         Controls
       </div>
-      
+
       <div class="control-group">
         <div class="toggle-group">
           <label for="autoRotate">Auto Rotation</label>
@@ -407,7 +718,7 @@ const GALAXY_ANIMATION_COMPONENT = `
           </label>
         </div>
       </div>
-      
+
       <div class="control-group">
         <div class="toggle-group">
           <label for="orbitControls">Orbit Controls</label>
@@ -418,7 +729,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </div>
       </div>
     </div>
-    
+
     <div class="control-section">
       <div class="section-title">
         <svg viewBox="0 0 24 24">
@@ -426,7 +737,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         </svg>
         Presets
       </div>
-      
+
       <div class="preset-buttons">
         <button class="preset-btn" data-preset="fire">Fire Galaxy</button>
         <button class="preset-btn" data-preset="ice">Ice Galaxy</button>
@@ -436,7 +747,7 @@ const GALAXY_ANIMATION_COMPONENT = `
         <button class="preset-btn" data-preset="forest">Forest</button>
       </div>
     </div>
-    
+
     <button class="reset-btn" id="resetBtn">Reset to Default</button>
   </div>
 
@@ -475,6 +786,7 @@ const GALAXY_ANIMATION_COMPONENT = `
 
     // Load saved parameters from localStorage or use defaults
     let parameters = JSON.parse(localStorage.getItem('galaxyParameters')) || {...defaultParameters};
+    const saveGalaxyParams = () => { localStorage.setItem('galaxyParameters', JSON.stringify(parameters)); generateGalaxy(); };
 
     let material, geometry, points;
     function generateGalaxy() {
@@ -594,7 +906,7 @@ const GALAXY_ANIMATION_COMPONENT = `
           camera.position.y = tilt * 4.2 + 2.2; // maintain oblique height
           camera.lookAt(0, 0, 0);
         }
-        
+
         if (parameters.orbitControls) {
           controls.update();
         }
@@ -667,70 +979,61 @@ const GALAXY_ANIMATION_COMPONENT = `
     insideColor.addEventListener('input', () => {
       parameters.insideColor = insideColor.value;
       insideColorText.value = insideColor.value;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     insideColorText.addEventListener('input', () => {
       parameters.insideColor = insideColorText.value;
       insideColor.value = insideColorText.value;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Outside color controls
     outsideColor.addEventListener('input', () => {
       parameters.outsideColor = outsideColor.value;
       outsideColorText.value = outsideColor.value;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     outsideColorText.addEventListener('input', () => {
       parameters.outsideColor = outsideColorText.value;
       outsideColor.value = outsideColorText.value;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Particle size control
     particleSize.addEventListener('input', () => {
       parameters.size = parseFloat(particleSize.value);
       sizeValue.textContent = parameters.size.toFixed(3);
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Particle count control
     particleCount.addEventListener('input', () => {
       parameters.count = parseInt(particleCount.value);
       countValue.textContent = parameters.count;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Spin factor control
     spinFactor.addEventListener('input', () => {
       parameters.spin = parseFloat(spinFactor.value);
       spinValue.textContent = parameters.spin.toFixed(1);
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Branches control
     branches.addEventListener('input', () => {
       parameters.branches = parseInt(branches.value);
       branchesValue.textContent = parameters.branches;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Randomness control
     randomness.addEventListener('input', () => {
       parameters.randomness = parseFloat(randomness.value);
       randomnessValue.textContent = parameters.randomness;
-      localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
-      generateGalaxy();
+      saveGalaxyParams();
     });
 
     // Auto rotation toggle
@@ -790,7 +1093,7 @@ const GALAXY_ANIMATION_COMPONENT = `
       button.addEventListener('click', () => {
         const presetName = button.getAttribute('data-preset');
         const preset = presets[presetName];
-        
+
         if (preset) {
           Object.assign(parameters, preset);
           localStorage.setItem('galaxyParameters', JSON.stringify(parameters));
@@ -817,7 +1120,7 @@ const wildcards = [];
 class CloudflareApi {
   constructor() {
     this.bearer = `Bearer ${scriptConfig.API_KEY}`;
-    
+
     this.headers = {
       Authorization: this.bearer,
       "X-Auth-Email": scriptConfig.API_EMAIL,
@@ -1206,7 +1509,7 @@ const SIDEBAR_COMPONENT = `
                     </div>
                 </a>
             </nav>
-            
+
             <a
     href="/stats"
     class="menu-item flex items-center py-3 px-3 relative"
@@ -1280,6 +1583,24 @@ async function getProxyList(forceReload = false) {
   return cachedProxyList;
 }
 
+async function getProxies(country, limit) {
+    const proxyList = await getProxyList();
+    let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
+    if (country && country.toLowerCase() === 'random') {
+        ips = ips.sort(() => Math.random() - 0.5);
+    } else if (country) {
+        ips = ips.filter(line => {
+            const parts = line.split(',');
+            return parts.length > 1 && parts[2].toUpperCase() === country.toUpperCase();
+        });
+    }
+    if (limit && !isNaN(limit)) {
+        ips = ips.slice(0, limit);
+    }
+    return ips;
+}
+
+
 async function reverseProxy(request, target) {
   const targetUrl = new URL(request.url);
   targetUrl.hostname = target;
@@ -1348,10 +1669,10 @@ const upgradeHeader = request.headers.get("Upgrade");
 // Menggunakan URL constructor atau memastikan slash konsisten
 const CHECK_API_BASE = `https://api.allorigins.win/raw?url=https://${myurl}`;
 
-// Pastikan tidak ada double slash jika myurl sudah punya path, 
+// Pastikan tidak ada double slash jika myurl sudah punya path,
 // tapi untuk domain murni, tambahkan '/' sebelum 'check'
 const CHECK_API = `${CHECK_API_BASE}/check?ip=`;
-      
+
       // Handle IP check
       if (url.pathname === "/geo-ip") {
         const ip = url.searchParams.get("ip");
@@ -1370,7 +1691,7 @@ const CHECK_API = `${CHECK_API_BASE}/check?ip=`;
         return new Response(JSON.stringify(data), {
           headers: { "Content-Type": "application/json" },
         });
-      }      
+      }
 
       async function updateProxies() {
   const proxies = await getProxyList();
@@ -1387,7 +1708,7 @@ const CHECK_API = `${CHECK_API_BASE}/check?ip=`;
   const allMatch = url.pathname.match(/^\/Free-VPN-CF-Geo-Project\/ALL(\d*)$/);
 
   if (allMatch) {
-    const indexStr = allMatch[1]; 
+    const indexStr = allMatch[1];
     const index = indexStr ? parseInt(indexStr) - 1 : Math.floor(Math.random() * 10000);
 
     console.log(`ALL Proxy Request. Index Requested: ${indexStr ? index + 1 : 'Random'}`);
@@ -1533,7 +1854,7 @@ async function handleCheck(paramss) {
 
   try {
     const apiResponse = await fetch(apiUrl);
-    
+
     const result = await apiResponse.json();
 
     const responseData = {
@@ -1612,6 +1933,7 @@ function mamangenerateHTML() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proxy Checker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1631,6 +1953,21 @@ function mamangenerateHTML() {
       --success: #10b981;
       --warning: #f59e0b;
       --error: #ef4444;
+    }
+
+    .card-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s ease;
+    }
+    .card-glass:hover {
+      transform: translateY(-5px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+    }
+
     }
 
     * {
@@ -1655,7 +1992,7 @@ function mamangenerateHTML() {
       left: 0;
       width: 100%;
       height: 100%;
-      background: 
+      background:
         radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
       z-index: -1;
@@ -1944,11 +2281,39 @@ function mamangenerateHTML() {
       }
     }
   </style>
+<script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --glass-bg: rgba(30, 41, 59, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.4);
+      --secondary: #8b5cf6;
+      --accent: #06b6d4;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+    .card-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s ease;
+    }
+    .card-glass:hover {
+      transform: translateY(-5px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+    }
+  </style>
 </head>
 <body>
   ${GALAXY_ANIMATION_COMPONENT}
   ${SIDEBAR_COMPONENT}
-  
+
   <header>
     <div class="header-content">
       <h1><i class="fas fa-shield-alt"></i> Proxy Checker</h1>
@@ -2101,7 +2466,7 @@ function mamangenerateHTML() {
             localStorage.setItem("proxyData", JSON.stringify(data));
             updateTable(data);
             if (data.latitude && data.longitude) updateMap(data.latitude, data.longitude, data);
-            
+
             // Show success notification
             Swal.fire({
                 icon: 'success',
@@ -2172,7 +2537,7 @@ function mamangenerateHTML() {
             initMap(lat, lon, 7);
         } else {
             map.setView([lat, lon], 7);
-            
+
             // Hapus semua marker sebelum menambahkan yang baru
             map.eachLayer(function (layer) {
                 if (layer instanceof L.Marker) map.removeLayer(layer);
@@ -2184,10 +2549,10 @@ function mamangenerateHTML() {
     }
 
     function saveMapData(lat, lon, zoom, proxy = null, isp = null, asn = null) {
-        localStorage.setItem("mapData", JSON.stringify({ 
-            latitude: lat, 
-            longitude: lon, 
-            zoom: zoom 
+        localStorage.setItem("mapData", JSON.stringify({
+            latitude: lat,
+            longitude: lon,
+            zoom: zoom
         }));
 
         const markerData = { latitude: lat, longitude: lon };
@@ -2386,7 +2751,7 @@ async function handleStatsRequest() {
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background: 
+                background:
                     radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
                     radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
                 z-index: -1;
@@ -2452,7 +2817,7 @@ async function handleStatsRequest() {
 
             .stat-card:hover {
                 transform: translateY(-5px);
-                box-shadow: 
+                box-shadow:
                     var(--glass-shadow),
                     0 10px 30px rgba(59, 130, 246, 0.2);
             }
@@ -2504,7 +2869,7 @@ async function handleStatsRequest() {
 
             .stats-card:hover {
                 transform: translateY(-3px);
-                box-shadow: 
+                box-shadow:
                     var(--glass-shadow),
                     0 8px 25px rgba(59, 130, 246, 0.15);
                 border-color: rgba(59, 130, 246, 0.3);
@@ -2785,15 +3150,15 @@ async function handleStatsRequest() {
             <div class="cards-container" id="cardsContainer">
                 ${allCardsHtml}
             </div>
-            
+
             <div class="pagination-container" id="paginationContainer">
                 <!-- Pagination buttons will be generated here -->
             </div>
-            
+
             <div class="pagination-info" id="paginationInfo">
                 <!-- Page info will be shown here -->
             </div>
-            
+
             <footer>
                 Powered by <a href="https://t.me/sampiiiiu" target="_blank">GEO PROJECT</a>
             </footer>
@@ -2807,36 +3172,36 @@ async function handleStatsRequest() {
                 const cards = cardsContainer.querySelectorAll('.stats-card');
                 const itemsPerPage = 5;
                 let currentPage = 1;
-                
+
                 // Calculate total pages
                 const totalPages = Math.ceil(cards.length / itemsPerPage);
-                
+
                 // Function to show page
                 function showPage(page) {
                     // Hide all cards
                     cards.forEach(card => {
                         card.classList.remove('active');
                     });
-                    
+
                     // Show cards for current page
                     const startIndex = (page - 1) * itemsPerPage;
                     const endIndex = startIndex + itemsPerPage;
-                    
+
                     for (let i = startIndex; i < endIndex && i < cards.length; i++) {
                         cards[i].classList.add('active');
                     }
-                    
+
                     // Update pagination buttons
                     updatePaginationButtons(page);
-                    
+
                     // Update page info
                     updatePageInfo(page);
                 }
-                
+
                 // Function to update pagination buttons
                 function updatePaginationButtons(activePage) {
                     paginationContainer.innerHTML = '';
-                    
+
                     // Previous button
                     const prevButton = document.createElement('button');
                     prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
@@ -2848,16 +3213,16 @@ async function handleStatsRequest() {
                         }
                     });
                     paginationContainer.appendChild(prevButton);
-                    
+
                     // Page number buttons
                     const maxVisiblePages = 5;
                     let startPage = Math.max(1, activePage - Math.floor(maxVisiblePages / 2));
                     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-                    
+
                     if (endPage - startPage + 1 < maxVisiblePages) {
                         startPage = Math.max(1, endPage - maxVisiblePages + 1);
                     }
-                    
+
                     for (let i = startPage; i <= endPage; i++) {
                         const pageButton = document.createElement('button');
                         pageButton.textContent = i;
@@ -2867,7 +3232,7 @@ async function handleStatsRequest() {
                         });
                         paginationContainer.appendChild(pageButton);
                     }
-                    
+
                     // Next button
                     const nextButton = document.createElement('button');
                     nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
@@ -2880,14 +3245,14 @@ async function handleStatsRequest() {
                     });
                     paginationContainer.appendChild(nextButton);
                 }
-                
+
                 // Function to update page info
                 function updatePageInfo(page) {
                     const startItem = (page - 1) * itemsPerPage + 1;
                     const endItem = Math.min(page * itemsPerPage, cards.length);
                     paginationInfo.textContent = 'Menampilkan ' + startItem + '-' + endItem + ' dari ' + cards.length + ' data';
                 }
-                
+
                 // Initialize pagination
                 if (cards.length > 0) {
                     showPage(currentPage);
@@ -2966,7 +3331,7 @@ async function handleKuotaRequest() {
     <title>Cek Kuota XL/AXIS - Sidompul</title>
 
     <link rel="icon" href="https://raw.githubusercontent.com/jaka9m/vless/refs/heads/main/sidompul.jpg" type="image/jpeg">
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
@@ -2983,6 +3348,21 @@ async function handleKuotaRequest() {
             --text-gray: #94a3b8;
             --success: #10b981;
             --error: #ef4444;
+    }
+
+    .card-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s ease;
+    }
+    .card-glass:hover {
+      transform: translateY(-5px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+    }
+
             --warning: #f59e0b;
         }
 
@@ -3008,7 +3388,7 @@ async function handleKuotaRequest() {
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
+            background:
                 radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
@@ -3029,7 +3409,7 @@ async function handleKuotaRequest() {
             border-radius: 1.5rem;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            box-shadow: 
+            box-shadow:
                 0 10px 25px rgba(0, 0, 0, 0.2),
                 0 5px 10px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -3083,7 +3463,7 @@ async function handleKuotaRequest() {
             padding: 1.25rem;
             margin-bottom: 1.5rem;
             border: 1px solid rgba(59, 130, 246, 0.2);
-            box-shadow: 
+            box-shadow:
                 0 5px 15px rgba(0, 0, 0, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
@@ -3099,7 +3479,7 @@ async function handleKuotaRequest() {
             -webkit-backdrop-filter: blur(15px);
             border-radius: 1.5rem;
             padding: 2rem;
-            box-shadow: 
+            box-shadow:
                 0 10px 25px rgba(0, 0, 0, 0.2),
                 0 5px 10px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -3338,9 +3718,9 @@ ${GALAXY_ANIMATION_COMPONENT}
     <div id="cover-spin">
         <div class="loader"></div>
     </div>
-    
+
     <div id="custom-notification"></div>
-    
+
     <div class="main-container">
         <div class="header-card">
             <div class="logo-container">
@@ -3348,12 +3728,12 @@ ${GALAXY_ANIMATION_COMPONENT}
                 <h1 class="title">Sidompul Cek Kuota XL/AXIS</h1>
             </div>
         </div>
-        
+
         <div class="info-box">
-            <i class="fa fa-info-circle"></i> 
+            <i class="fa fa-info-circle"></i>
             Gunakan layanan ini secara bijak dan hindari spam. Pastikan nomor yang dimasukkan adalah nomor XL/AXIS aktif.
         </div>
-        
+
         <div class="form-container">
             <form id="formnya">
                 <div class="mb-6">
@@ -3362,7 +3742,7 @@ ${GALAXY_ANIMATION_COMPONENT}
                     </label>
                     <input type="number" class="input-field" id="msisdn" placeholder="Contoh: 08123456789 atau 628123456789" maxlength="16" required>
                 </div>
-                
+
                 <button type="button" id="submitCekKuota" class="btn-primary">
                     <i class="fa fa-search"></i>
                     <span>Cek Kuota Sekarang</span>
@@ -3390,7 +3770,7 @@ ${GALAXY_ANIMATION_COMPONENT}
                 console.error('Nomor tidak boleh kosong.');
                 return;
             }
-            
+
             $('#cover-spin').show();
             $.ajax({
                 type: 'GET',
@@ -3419,10 +3799,10 @@ ${GALAXY_ANIMATION_COMPONENT}
                 }
             });
         }
-        
+
         // Pemasangan event listener setelah konten dimuat
         $(document).ready(function() {
-            $('#submitCekKuota').off('click').on('click', cekKuota); 
+            $('#submitCekKuota').off('click').on('click', cekKuota);
             $('#msisdn').off('keypress').on('keypress', function (e) {
                 if (e.which === 13) cekKuota();
             });
@@ -3473,7 +3853,7 @@ async function handleSubRequest(hostnem) {
   const countries = await getCountryList();
   const countryOptions = countries.map(c => `<option value="${c.code.toLowerCase()}">${c.name}</option>`).join('\n');
 
-  const html = ` 
+  const html = `
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -3502,6 +3882,21 @@ async function handleSubRequest(hostnem) {
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
+    }
+
+    .card-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s ease;
+    }
+    .card-glass:hover {
+      transform: translateY(-5px);
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
+    }
+
         }
 
         * {
@@ -3526,7 +3921,7 @@ async function handleSubRequest(hostnem) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
+            background:
                 radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
             z-index: -1;
@@ -3825,13 +4220,13 @@ async function handleSubRequest(hostnem) {
 <body>
     ${GALAXY_ANIMATION_COMPONENT}
     ${SIDEBAR_COMPONENT}
-    
+
     <div class="container">
         <div class="card">
             <h1 class="title">
                 <i class="fas fa-link"></i> Sub Link Generator
             </h1>
-            
+
             <form id="subLinkForm">
                 <div class="form-group">
                     <label for="app">
@@ -3921,7 +4316,7 @@ async function handleSubRequest(hostnem) {
                 <i class="fas fa-spinner"></i>
                 Generating Link...
             </div>
-            
+
             <div id="error-message" class="error-message"></div>
 
             <div id="result" class="result">
@@ -3976,7 +4371,7 @@ async function handleSubRequest(hostnem) {
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 loadingEl.style.display = 'block';
                 resultEl.style.display = 'none';
                 errorMessageEl.textContent = '';
@@ -4064,7 +4459,7 @@ async function handleWebRequest(request) {
         }
         return hostname;
     });
-    
+
     // Gabungkan wildcard statis dan dinamis, lalu hapus duplikat
     const allWildcards = [...new Set([...wildcards, ...dynamicWildcards])];
 
@@ -4106,7 +4501,7 @@ function buildCountryFlag() {
     if (flag && flag !== "Unknown") {
       try {
         flagElement += `<a href="/web?page=${page}&search=${flag}" class="py-0.5">
-      <span class="flag-circle flag-icon flag-icon-${flag.toLowerCase()}" 
+      <span class="flag-circle flag-icon flag-icon-${flag.toLowerCase()}"
       style="display: inline-block; width: 30px; height: 30px; margin: 1px; border: 1px solid #008080; border-radius: 30%;">
 </span>
 </a>`;
@@ -4144,7 +4539,7 @@ function buildCountryFlag() {
     let filteredConfigs = configs;
     if (searchQuery.includes(':')) {
         // Search by IP:PORT format
-        filteredConfigs = configs.filter((config) => 
+        filteredConfigs = configs.filter((config) =>
             `${config.ip}:${config.port}`.includes(searchQuery)
         );
     } else if (searchQuery.length === 2) {
@@ -4160,7 +4555,7 @@ function buildCountryFlag() {
             config.isp.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }
-     
+
     const totalFilteredConfigs = filteredConfigs.length;
     const totalPages = Math.ceil(totalFilteredConfigs / configsPerPage);
     const startIndex = (page - 1) * configsPerPage;
@@ -4193,7 +4588,7 @@ function buildCountryFlag() {
         const trojanTLSRibet = `trojan://${uuid}@${wildcard}:443?encryption=none&security=tls&sni=${modifiedHostName}&fp=randomized&type=ws&host=${modifiedHostName}&path=${subP}${path2}#${encodedFragment}`;
         const ssTLSSimple = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
         const ssTLSRibet = `ss://${btoa(`none:${uuid}`)}%3D@${wildcard}:443?encryption=none&type=ws&host=${modifiedHostName}&path=${subP}${path2}&security=tls&sni=${modifiedHostName}#${encodedFragment}`;
-        
+
         const vlessNTLSSimple = `vless://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
         const vlessNTLSRibet = `vless://${uuid}@${wildcard}:80?path=${subP}${path2}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
         const trojanNTLSSimple = `trojan://${uuid}@${wildcard}:80?path=${encodeURIComponent(subP + config.path.toUpperCase())}&security=none&encryption=none&host=${modifiedHostName}&fp=randomized&type=ws&sni=${modifiedHostName}#${encodedFragment}`;
@@ -4277,7 +4672,7 @@ function buildCountryFlag() {
                 width: '270px',
                 html: \`
                     <div class="px-1 py-1 text-center">
-                    <span class="flag-circle flag-icon flag-icon-\${config.countryCode.toLowerCase()}" 
+                    <span class="flag-circle flag-icon flag-icon-\${config.countryCode.toLowerCase()}"
                     style="width: 60px; height: 60px; border-radius: 50%; display: inline-block;">
                     </span>
                     </div>
@@ -4303,20 +4698,20 @@ function buildCountryFlag() {
                     popup: 'rounded-popup',
                     closeButton: 'close-btn'
                 },
-                position: 'center', 
+                position: 'center',
                 showClass: {
-                    popup: 'animate__animated animate__fadeInLeft' 
+                    popup: 'animate__animated animate__fadeInLeft'
                 },
                 hideClass: {
-                    popup: 'animate__animated animate__fadeOutRight' 
+                    popup: 'animate__animated animate__fadeOutRight'
                 },
                 didOpen: () => {
                     const popup = document.querySelector('.swal2-popup');
-                    popup.style.animationDuration = '0.3s'; 
+                    popup.style.animationDuration = '0.3s';
                 },
                 didClose: () => {
                     const popup = document.querySelector('.swal2-popup');
-                    popup.style.animationDuration = '0.3s'; 
+                    popup.style.animationDuration = '0.3s';
                 }
             });
         }
@@ -4358,7 +4753,7 @@ function buildCountryFlag() {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.tailwindcss.com"></script>
         <script>
@@ -4393,7 +4788,7 @@ function buildCountryFlag() {
                 document.documentElement.classList.remove('dark')
             }
         </script>
-        
+
         <style>
 :root {
     --primary: #22c55e;
@@ -4467,35 +4862,35 @@ function buildCountryFlag() {
 }
 
 @keyframes slideUp {
-    from { 
+    from {
         opacity: 0;
         transform: translateY(30px);
     }
-    to { 
+    to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
 @keyframes fireLine {
-    0% { 
+    0% {
         left: -100%;
         opacity: 0;
     }
-    50% { 
+    50% {
         opacity: 1;
     }
-    100% { 
+    100% {
         left: 100%;
         opacity: 0;
     }
 }
 
 @keyframes pulse {
-    0%, 100% { 
+    0%, 100% {
         box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
     }
-    50% { 
+    50% {
         box-shadow: 0 0 25px rgba(52, 152, 219, 0.6);
     }
 }
@@ -4529,7 +4924,7 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-.dark body { 
+.dark body {
     background-color: var(--dark-bg);
     color: var(--light);
     background-size: cover;
@@ -4705,7 +5100,7 @@ select:focus {
 
 .neon-active {
     color: #00FF00;
-    text-shadow: 
+    text-shadow:
         0 0 5px #00FF00,
         0 0 10px #00FF00,
         0 0 15px #00FF00,
@@ -4715,7 +5110,7 @@ select:focus {
 
 .neon-dead {
     color: #FF3333;
-    text-shadow: 
+    text-shadow:
         0 0 5px #FF3333,
         0 0 10px #FF3333,
         0 0 15px #FF3333;
@@ -4746,35 +5141,35 @@ select:focus {
 @keyframes discoLights {
     0% {
         color: #00FF00;
-        text-shadow: 
+        text-shadow:
             0 0 5px #00FF00,
             0 0 10px #00FF00,
             0 0 15px #00FF00;
     }
     25% {
         color: #FF00FF;
-        text-shadow: 
+        text-shadow:
             0 0 5px #FF00FF,
             0 0 10px #FF00FF,
             0 0 15px #FF00FF;
     }
     50% {
         color: #00FFFF;
-        text-shadow: 
+        text-shadow:
             0 0 5px #00FFFF,
             0 0 10px #00FFFF,
             0 0 15px #00FFFF;
     }
     75% {
         color: #FFFF00;
-        text-shadow: 
+        text-shadow:
             0 0 5px #FFFF00,
             0 0 10px #FFFF00,
             0 0 15px #FFFF00;
     }
     100% {
         color: #00FF00;
-        text-shadow: 
+        text-shadow:
             0 0 5px #00FF00,
             0 0 10px #00FF00,
             0 0 15px #00FF00;
@@ -4811,21 +5206,21 @@ select:focus {
 @keyframes deadDisco {
     0% {
         color: #FF3333;
-        text-shadow: 
+        text-shadow:
             0 0 5px #FF3333,
             0 0 10px #FF3333,
             0 0 15px #FF3333;
     }
     50% {
         color: #FF6B6B;
-        text-shadow: 
+        text-shadow:
             0 0 5px #FF6B6B,
             0 0 10px #FF6B6B,
             0 0 15px #FF6B6B;
     }
     100% {
         color: #FF3333;
-        text-shadow: 
+        text-shadow:
             0 0 5px #FF3333,
             0 0 10px #FF3333,
             0 0 15px #FF3333;
@@ -4860,7 +5255,7 @@ select:focus {
     border: 4px solid rgba(52, 152, 219, 0.2);
     border-top: 4px solid #3498db;
     border-radius: 50%;
-    animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite, 
+    animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite,
                pulse 2s ease-in-out infinite;
     box-shadow: 0 0 15px rgba(52, 152, 219, 0.3);
     position: relative;
@@ -5169,7 +5564,7 @@ select:focus {
     animation: fireCollision 4s linear infinite;
 }
 
-.dark .copyright-fire::before, 
+.dark .copyright-fire::before,
 .dark .copyright-fire::after {
     background: linear-gradient(90deg, transparent, white, transparent);
 }
@@ -5191,7 +5586,7 @@ select:focus {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: 
+    background:
         radial-gradient(circle at 30% 30%, rgba(0, 0, 0, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.05) 0%, transparent 50%);
     animation: meteorShower 20s linear infinite;
@@ -5199,7 +5594,7 @@ select:focus {
 }
 
 .dark .footer::before {
-    background: 
+    background:
         radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
 }
@@ -5217,15 +5612,15 @@ select:focus {
     max-width: 350px;
     margin: 20px auto;
     padding: 20px;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.25) 0%, 
-        rgba(255, 255, 255, 0.15) 50%, 
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.15) 50%,
         rgba(255, 255, 255, 0.1) 100%);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 15px;
     min-height: calc(100vh - 40px);
     transition: all 0.3s ease;
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(255, 255, 255, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.2),
         inset 0 -1px 0 rgba(255, 255, 255, 0.1);
@@ -5240,21 +5635,21 @@ select:focus {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.1) 0%, 
-        transparent 50%, 
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%,
         rgba(255, 255, 255, 0.05) 100%);
     pointer-events: none;
     border-radius: 15px;
 }
 
 .dark .quantum-container {
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.15) 0%, 
-        rgba(255, 255, 255, 0.08) 50%, 
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
         rgba(255, 255, 255, 0.05) 100%);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 
+    box-shadow:
         0 8px 32px rgba(255, 255, 255, 0.05),
         inset 0 1px 0 rgba(255, 255, 255, 0.15),
         inset 0 -1px 0 rgba(255, 255, 255, 0.05);
@@ -5317,11 +5712,11 @@ select:focus {
    ${SIDEBAR_COMPONENT}
     <div class="quantum-container">
     <div class="mt-10"></div>
-                <div class="wildcard-dropdown"> 
+                <div class="wildcard-dropdown">
                     <button onclick="toggleWildcardsWindow()" class="bg-gradient-to-r from-green-500 to-green-700 rounded-full p-2 block text-white border-2 border-green-900 transition duration-300 ease-in-out hover:from-green-700 hover:to-green-900">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
-                        </svg> 
+                        </svg>
                     </button>
                     <select id="wildcard" name="wildcard" onchange="onWildcardChange(event)" style="width: 90px; height: 45px;">
                         <option value="" ${!selectedWildcard ? 'selected' : ''}>No Wildcard</option>
@@ -5329,7 +5724,7 @@ select:focus {
                     </select>
                     <select id="configType" name="configType" onchange="onConfigTypeChange(event)" style="width: 60px; height: 45px;">
                         <option value="tls" ${selectedConfigType === 'tls' ? 'selected' : ''}>TLS</option>
-                        <option value="non-tls" ${selectedConfigType === 'non-tls' ? 'selected' : ''}>NON TLS</option> 
+                        <option value="non-tls" ${selectedConfigType === 'non-tls' ? 'selected' : ''}>NON TLS</option>
                     </select>
                     <a href="${telegrambot}" target="_blank">
                         <button class="bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 rounded-full border-2 border-gray-900 p-2 transition-colors duration-200 shadow-lg z-50">
@@ -5338,18 +5733,18 @@ select:focus {
                                 <path d="M7 10l5 5l5-5"></path>
                                 <path d="M12 15l-5 5"></path>
                                 <path d="M12 15l5 5"></path>
-                            </svg> 
-                        </button> 
+                            </svg>
+                        </button>
                     </a>
                     </div>
-                
+
             <div class="w-full h-12 px-2 py-1 flex items-center space-x-2 shadow-lg border"
     style="border-width: 1px; border-style: solid; border-color: #28a745; height: 55px; border-radius: 10px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); overflow-x: auto; overflow-y: hidden;">
     ${buildCountryFlag()}
 </div>
                 ${cardsHTML}
                 ${showOptionsScript}
-                
+
                 <script>
             /* [PERBAIKAN 4]: Menggunakan document.documentElement untuk mendapatkan tag <html> */
             function toggleDarkMode() {
@@ -5377,7 +5772,7 @@ select:focus {
                             try {
                                 const response = await fetch(healthCheckUrl);
                                 if (!response.ok) throw new Error('Network response was not ok');
-                                
+
                                 const data = await response.json();
                                 const status = data.status || 'UNKNOWN';
                                 let delay = parseFloat(data.delay) || NaN;
@@ -5391,7 +5786,7 @@ select:focus {
                                 }
 
                                 let statusHTML = '';
-                                
+
                                 switch (status) {
                                     case 'ACTIVE':
                                         statusHTML = \`
@@ -5418,7 +5813,7 @@ select:focus {
                                             </div>
                                         \`;
                                 }
-                                
+
                                 statusElement.innerHTML = statusHTML + delayHTML;
 
                             } catch (error) {
@@ -5436,7 +5831,7 @@ select:focus {
                     };
 
                     checkAllProxies();
-                    
+
                     const statusHeader = document.querySelector('thead tr th:nth-child(6)'); // Kolom "STATUS"
                     if(statusHeader) {
                         statusHeader.style.cursor = 'pointer';
@@ -5452,12 +5847,12 @@ select:focus {
                 ${paginationButtons.join('')}
                 ${nextPage}
             </div>
-           
+
           <!-- Showing X to Y of Z Proxies message -->
           <div style="text-align: center; margin-top: 16px; color: var(--primary); font-family: 'Rajdhani', sans-serif;">
             Showing ${startIndex + 1} to ${endIndex} of ${totalFilteredConfigs} Proxies
-           
- 
+
+
       <footer>
     <div class="content">
         <div class="social-icons">
@@ -5480,7 +5875,7 @@ select:focus {
                 </div>
             </div>
         </div>
-        
+
 
         <script>
 function copy(text) {
@@ -5596,17 +5991,17 @@ document.getElementById('search-button').addEventListener('click', executeSearch
 </script>
 
 <div id="wildcards-window" class="fixed hidden z-30 top-0 right-0 w-full h-full flex justify-center items-center">
-  <div class="w-[75%] max-w-md h-auto flex flex-col gap-2 p-4 rounded-lg 
-              bg-blue-500 bg-opacity-20 backdrop-blur-md 
-              border border-blue-300 text-white"> 
-      
+  <div class="w-[75%] max-w-md h-auto flex flex-col gap-2 p-4 rounded-lg
+              bg-blue-500 bg-opacity-20 backdrop-blur-md
+              border border-blue-300 text-white">
+
       <!-- Input add domain -->
       <div class="flex w-full h-full gap-2 justify-between">
-          <input id="new-domain-input" 
-                 type="text" 
-                 placeholder="Input wildcard" 
+          <input id="new-domain-input"
+                 type="text"
+                 placeholder="Input wildcard"
                  class="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-          <button id="add-domain-button" onclick="registerDomain()" 
+          <button id="add-domain-button" onclick="registerDomain()"
                   class="p-2 rounded-full bg-blue-600 hover:bg-blue-700 flex justify-center items-center text-white">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                   <path fill-rule="evenodd" d="M16.72 7.72a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06l-3.75 3.75a.75.75 0 1 1-1.06-1.06l2.47-2.47H3a.75.75 0 0 1 0-1.5h16.19l-2.47-2.47a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/>
@@ -5615,21 +6010,21 @@ document.getElementById('search-button').addEventListener('click', executeSearch
       </div>
 
       <!-- Container list domain -->
-      <div id="container-domains" 
+      <div id="container-domains"
            class="w-full h-32 rounded-md flex flex-col gap-1 overflow-y-scroll scrollbar-hide p-2 bg-gray-900 text-white">
       </div>
-  
+
       <!-- Input delete domain -->
       <div class="flex w-full h-full gap-2 justify-between">
-          <input id="delete-domain-input" 
-                 type="number" 
-                 placeholder="Input Nomor" 
+          <input id="delete-domain-input"
+                 type="number"
+                 placeholder="Input Nomor"
                  class="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-          <input id="delete-domain-password" 
-                 type="password" 
-                 placeholder="Input Password" 
+          <input id="delete-domain-password"
+                 type="password"
+                 placeholder="Input Password"
                  class="w-full px-4 py-2 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-          <button id="delete-domain-button" onclick="deleteDomainByNumber()" 
+          <button id="delete-domain-button" onclick="deleteDomainByNumber()"
                   class="p-2 rounded-full bg-red-600 hover:bg-red-700 flex justify-center items-center text-white">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                   <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clip-rule="evenodd" />
@@ -5646,7 +6041,7 @@ document.getElementById('search-button').addEventListener('click', executeSearch
       </div>
 
       <!-- Close button -->
-      <button onclick="toggleWildcardsWindow()" 
+      <button onclick="toggleWildcardsWindow()"
               class="mt-1 p-3 rounded-lg bg-red-500 hover:bg-red-600 text-xs font-semibold transition-colors duration-300 flex items-center justify-center gap-1 px-6 py-2 text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
               <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
@@ -5660,7 +6055,7 @@ document.getElementById('search-button').addEventListener('click', executeSearch
         let domains = [];
         const wildcardsWindow = document.getElementById('wildcards-window');
         const domainsContainer = document.getElementById('container-domains');
-        
+
         async function loadDomains() {
             try {
                 const response = await fetch('/api/v1/domains');
@@ -5698,7 +6093,7 @@ document.getElementById('search-button').addEventListener('click', executeSearch
                 addDomainButton.disabled = true;
                 deleteDomainInput.disabled = true;
                 deleteDomainButton.disabled = true;
-                
+
                 progressFill.style.width = '0%';
                 // Use a timeout to ensure the transition is applied after the initial width is set
                 setTimeout(() => {
@@ -6330,37 +6725,17 @@ const getEmojiFlag = (countryCode) => {
   );
 };
 async function generateClashSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
-  
+  const ips = await getProxies(country, limit);
+
   let conf = '';
   let bex = '';
   let count = 1;
-  
+
   for (let line of ips) {
     const parts = line.split(',');
     const proxyHost = parts[0];
     const proxyPort = parts[1] || 443;
     const emojiFlag = getEmojiFlag(line.split(',')[2]); // Konversi ke emoji bendera
-    const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim(); // Hapus newline dan spasi ekstra
     let ispName = sanitize(`${emojiFlag} (${line.split(',')[2]}) ${line.split(',')[3]} ${count ++}`);
     const UUIDS = `${generateUUIDv4()}`;
     const ports = tls ? '443' : '80';
@@ -6467,7 +6842,7 @@ async function generateClashSub(type, bug, geo81, tls, country = null, limit = n
       custom: ${geo81}`;
     }
   }
-  return `#### BY : GEO PROJECT #### 
+  return `#### BY : GEO PROJECT ####
 
 port: 7890
 socks-port: 7891
@@ -6646,35 +7021,16 @@ rules:
 - MATCH,INTERNET`;
 }
 async function generateSurfboardSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
   let conf = '';
   let bex = '';
   let count = 1;
-  
+
   for (let line of ips) {
     const parts = line.split(',');
     const proxyHost = parts[0];
     const proxyPort = parts[1] || 443;
     const emojiFlag = getEmojiFlag(line.split(',')[2]); // Konversi ke emoji bendera
-    const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim(); // Hapus newline dan spasi ekstra
     let ispName = sanitize(`${emojiFlag} (${line.split(',')[2]}) ${line.split(',')[3]} ${count ++}`);
     const UUIDS = `${generateUUIDv4()}`;
     if (type === 'trojan') {
@@ -6697,339 +7053,10 @@ Load Balance = load-balance,${bex}
 Best Ping = url-test,${bex} url=http://www.gstatic.com/generate_204, interval=600, tolerance=100, timeout=5
 FallbackGroup = fallback,${bex} url=http://www.gstatic.com/generate_204, interval=600, timeout=5
 AdBlock = select,REJECT,Select Group
-
-[Rule]
-MATCH,Select Group
-DOMAIN-SUFFIX,pagead2.googlesyndication.com, AdBlock
-DOMAIN-SUFFIX,pagead2.googleadservices.com, AdBlock
-DOMAIN-SUFFIX,afs.googlesyndication.com, AdBlock
-DOMAIN-SUFFIX,ads.google.com, AdBlock
-DOMAIN-SUFFIX,adservice.google.com, AdBlock
-DOMAIN-SUFFIX,googleadservices.com, AdBlock
-DOMAIN-SUFFIX,static.media.net, AdBlock
-DOMAIN-SUFFIX,media.net, AdBlock
-DOMAIN-SUFFIX,adservetx.media.net, AdBlock
-DOMAIN-SUFFIX,mediavisor.doubleclick.net, AdBlock
-DOMAIN-SUFFIX,m.doubleclick.net, AdBlock
-DOMAIN-SUFFIX,static.doubleclick.net, AdBlock
-DOMAIN-SUFFIX,doubleclick.net, AdBlock
-DOMAIN-SUFFIX,ad.doubleclick.net, AdBlock
-DOMAIN-SUFFIX,fastclick.com, AdBlock
-DOMAIN-SUFFIX,fastclick.net, AdBlock
-DOMAIN-SUFFIX,media.fastclick.net, AdBlock
-DOMAIN-SUFFIX,cdn.fastclick.net, AdBlock
-DOMAIN-SUFFIX,adtago.s3.amazonaws.com, AdBlock
-DOMAIN-SUFFIX,analyticsengine.s3.amazonaws.com, AdBlock
-DOMAIN-SUFFIX,advice-ads.s3.amazonaws.com, AdBlock
-DOMAIN-SUFFIX,affiliationjs.s3.amazonaws.com, AdBlock
-DOMAIN-SUFFIX,advertising-api-eu.amazon.com, AdBlock
-DOMAIN-SUFFIX,amazonclix.com, AdBlock, AdBlock
-DOMAIN-SUFFIX,assoc-amazon.com, AdBlock
-DOMAIN-SUFFIX,ads.yahoo.com, AdBlock
-DOMAIN-SUFFIX,adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,global.adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,us.adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,adspecs.yahoo.com, AdBlock
-DOMAIN-SUFFIX,br.adspecs.yahoo.com, AdBlock
-DOMAIN-SUFFIX,latam.adspecs.yahoo.com, AdBlock
-DOMAIN-SUFFIX,ush.adspecs.yahoo.com, AdBlock
-DOMAIN-SUFFIX,advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,de.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,es.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,fr.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,in.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,it.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,sea.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,uk.advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,analytics.yahoo.com, AdBlock
-DOMAIN-SUFFIX,cms.analytics.yahoo.com, AdBlock
-DOMAIN-SUFFIX,opus.analytics.yahoo.com, AdBlock
-DOMAIN-SUFFIX,sp.analytics.yahoo.com, AdBlock
-DOMAIN-SUFFIX,comet.yahoo.com, AdBlock
-DOMAIN-SUFFIX,log.fc.yahoo.com, AdBlock
-DOMAIN-SUFFIX,ganon.yahoo.com, AdBlock
-DOMAIN-SUFFIX,gemini.yahoo.com, AdBlock
-DOMAIN-SUFFIX,beap.gemini.yahoo.com, AdBlock
-DOMAIN-SUFFIX,geo.yahoo.com, AdBlock
-DOMAIN-SUFFIX,marketingsolutions.yahoo.com, AdBlock
-DOMAIN-SUFFIX,pclick.yahoo.com, AdBlock
-DOMAIN-SUFFIX,analytics.query.yahoo.com, AdBlock
-DOMAIN-SUFFIX,geo.query.yahoo.com, AdBlock
-DOMAIN-SUFFIX,onepush.query.yahoo.com, AdBlock
-DOMAIN-SUFFIX,bats.video.yahoo.com, AdBlock
-DOMAIN-SUFFIX,visit.webhosting.yahoo.com, AdBlock
-DOMAIN-SUFFIX,ads.yap.yahoo.com, AdBlock
-DOMAIN-SUFFIX,m.yap.yahoo.com, AdBlock
-DOMAIN-SUFFIX,partnerads.ysm.yahoo.com, AdBlock
-DOMAIN-SUFFIX,appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,19534.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,3.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,30488.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,4.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,report.appmetrica.yandex.net, AdBlock
-DOMAIN-SUFFIX,extmaps-api.yandex.net, AdBlock
-DOMAIN-SUFFIX,analytics.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,banners.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,banners-slb.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,startup.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,offerwall.yandex.net, AdBlock
-DOMAIN-SUFFIX,adfox.yandex.ru, AdBlock
-DOMAIN-SUFFIX,matchid.adfox.yandex.ru, AdBlock
-DOMAIN-SUFFIX,adsdk.yandex.ru, AdBlock
-DOMAIN-SUFFIX,an.yandex.ru, AdBlock
-DOMAIN-SUFFIX,redirect.appmetrica.yandex.ru, AdBlock
-DOMAIN-SUFFIX,awaps.yandex.ru, AdBlock
-DOMAIN-SUFFIX,awsync.yandex.ru, AdBlock
-DOMAIN-SUFFIX,bs.yandex.ru, AdBlock
-DOMAIN-SUFFIX,bs-meta.yandex.ru, AdBlock
-DOMAIN-SUFFIX,clck.yandex.ru, AdBlock
-DOMAIN-SUFFIX,informer.yandex.ru, AdBlock
-DOMAIN-SUFFIX,kiks.yandex.ru, AdBlock
-DOMAIN-SUFFIX,grade.market.yandex.ru, AdBlock
-DOMAIN-SUFFIX,mc.yandex.ru, AdBlock
-DOMAIN-SUFFIX,metrika.yandex.ru, AdBlock
-DOMAIN-SUFFIX,click.sender.yandex.ru, AdBlock
-DOMAIN-SUFFIX,share.yandex.ru, AdBlock
-DOMAIN-SUFFIX,yandexadexchange.net, AdBlock
-DOMAIN-SUFFIX,mobile.yandexadexchange.net, AdBlock
-DOMAIN-SUFFIX,google-analytics.com, AdBlock
-DOMAIN-SUFFIX,ssl.google-analytics.com, AdBlock
-DOMAIN-SUFFIX,api-hotjar.com, AdBlock
-DOMAIN-SUFFIX,hotjar-analytics.com, AdBlock
-DOMAIN-SUFFIX,hotjar.com, AdBlock
-DOMAIN-SUFFIX,static.hotjar.com, AdBlock
-DOMAIN-SUFFIX,mouseflow.com, AdBlock
-DOMAIN-SUFFIX,a.mouseflow.com, AdBlock
-DOMAIN-SUFFIX,freshmarketer.com, AdBlock
-DOMAIN-SUFFIX,luckyorange.com, AdBlock
-DOMAIN-SUFFIX,luckyorange.net, AdBlock
-DOMAIN-SUFFIX,cdn.luckyorange.com, AdBlock
-DOMAIN-SUFFIX,w1.luckyorange.com, AdBlock
-DOMAIN-SUFFIX,upload.luckyorange.net, AdBlock
-DOMAIN-SUFFIX,cs.luckyorange.net, AdBlock
-DOMAIN-SUFFIX,settings.luckyorange.net, AdBlock
-DOMAIN-SUFFIX,stats.wp.com, AdBlock
-DOMAIN-SUFFIX,notify.bugsnag.com, AdBlock
-DOMAIN-SUFFIX,sessions.bugsnag.com, AdBlock
-DOMAIN-SUFFIX,api.bugsnag.com, AdBlock
-DOMAIN-SUFFIX,app.bugsnag.com, AdBlock
-DOMAIN-SUFFIX,browser.sentry-cdn.com, AdBlock
-DOMAIN-SUFFIX,app.getsentry.com, AdBlock
-DOMAIN-SUFFIX,pixel.facebook.com, AdBlock
-DOMAIN-SUFFIX,analytics.facebook.com, AdBlock
-DOMAIN-SUFFIX,ads.facebook.com, AdBlock
-DOMAIN-SUFFIX,an.facebook.com, AdBlock
-DOMAIN-SUFFIX,ads-api.twitter.com, AdBlock
-DOMAIN-SUFFIX,advertising.twitter.com, AdBlock
-DOMAIN-SUFFIX,ads-twitter.com, AdBlock
-DOMAIN-SUFFIX,static.ads-twitter.com, AdBlock
-DOMAIN-SUFFIX,ads.linkedin.com, AdBlock
-DOMAIN-SUFFIX,analytics.pointdrive.linkedin.com, AdBlock
-DOMAIN-SUFFIX,ads.pinterest.com, AdBlock
-DOMAIN-SUFFIX,log.pinterest.com, AdBlock
-DOMAIN-SUFFIX,ads-dev.pinterest.com, AdBlock
-DOMAIN-SUFFIX,analytics.pinterest.com, AdBlock
-DOMAIN-SUFFIX,trk.pinterest.com, AdBlock
-DOMAIN-SUFFIX,trk2.pinterest.com, AdBlock
-DOMAIN-SUFFIX,widgets.pinterest.com, AdBlock
-DOMAIN-SUFFIX,ads.reddit.com, AdBlock
-DOMAIN-SUFFIX,rereddit.com, AdBlock
-DOMAIN-SUFFIX,events.redditmedia.com, AdBlock
-DOMAIN-SUFFIX,d.reddit.com, AdBlock
-DOMAIN-SUFFIX,ads-sg.tiktok.com, AdBlock
-DOMAIN-SUFFIX,analytics-sg.tiktok.com, AdBlock
-DOMAIN-SUFFIX,ads.tiktok.com, AdBlock
-DOMAIN-SUFFIX,analytics.tiktok.com, AdBlock
-DOMAIN-SUFFIX,ads.youtube.com, AdBlock
-DOMAIN-SUFFIX,youtube.cleverads.vn, AdBlock
-DOMAIN-SUFFIX,ads.yahoo.com, AdBlock
-DOMAIN-SUFFIX,adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,global.adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,us.adserver.yahoo.com, AdBlock
-DOMAIN-SUFFIX,adspecs.yahoo.com, AdBlock
-DOMAIN-SUFFIX,advertising.yahoo.com, AdBlock
-DOMAIN-SUFFIX,analytics.yahoo.com, AdBlock
-DOMAIN-SUFFIX,analytics.query.yahoo.com, AdBlock
-DOMAIN-SUFFIX,ads.yap.yahoo.com, AdBlock
-DOMAIN-SUFFIX,m.yap.yahoo.com, AdBlock
-DOMAIN-SUFFIX,partnerads.ysm.yahoo.com, AdBlock
-DOMAIN-SUFFIX,appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,19534.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,3.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,30488.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,4.redirect.appmetrica.yandex.com, AdBlock
-DOMAIN-SUFFIX,report.appmetrica.yandex.net, AdBlock
-DOMAIN-SUFFIX,extmaps-api.yandex.net, AdBlock
-DOMAIN-SUFFIX,analytics.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,banners.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,banners-slb.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,startup.mobile.yandex.net, AdBlock
-DOMAIN-SUFFIX,offerwall.yandex.net, AdBlock
-DOMAIN-SUFFIX,adfox.yandex.ru, AdBlock
-DOMAIN-SUFFIX,matchid.adfox.yandex.ru, AdBlock
-DOMAIN-SUFFIX,adsdk.yandex.ru, AdBlock
-DOMAIN-SUFFIX,an.yandex.ru, AdBlock
-DOMAIN-SUFFIX,redirect.appmetrica.yandex.ru, AdBlock
-DOMAIN-SUFFIX,awaps.yandex.ru, AdBlock
-DOMAIN-SUFFIX,awsync.yandex.ru, AdBlock
-DOMAIN-SUFFIX,bs.yandex.ru, AdBlock
-DOMAIN-SUFFIX,bs-meta.yandex.ru, AdBlock
-DOMAIN-SUFFIX,clck.yandex.ru, AdBlock
-DOMAIN-SUFFIX,informer.yandex.ru, AdBlock
-DOMAIN-SUFFIX,kiks.yandex.ru, AdBlock
-DOMAIN-SUFFIX,grade.market.yandex.ru, AdBlock
-DOMAIN-SUFFIX,mc.yandex.ru, AdBlock
-DOMAIN-SUFFIX,metrika.yandex.ru, AdBlock
-DOMAIN-SUFFIX,click.sender.yandex.ru, AdBlock
-DOMAIN-SUFFIX,share.yandex.ru, AdBlock
-DOMAIN-SUFFIX,yandexadexchange.net, AdBlock
-DOMAIN-SUFFIX,mobile.yandexadexchange.net, AdBlock
-DOMAIN-SUFFIX,bdapi-in-ads.realmemobile.com, AdBlock
-DOMAIN-SUFFIX,adsfs.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,adx.ads.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,bdapi.ads.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,ck.ads.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,data.ads.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,g1.ads.oppomobile.com, AdBlock
-DOMAIN-SUFFIX,api.ad.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,app.chat.xiaomi.net, AdBlock
-DOMAIN-SUFFIX,data.mistat.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,data.mistat.intl.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,data.mistat.india.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,data.mistat.rus.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,sdkconfig.ad.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,sdkconfig.ad.intl.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,globalapi.ad.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,www.cdn.ad.xiaomi.com, AdBlock
-DOMAIN-SUFFIX,tracking.miui.com, AdBlock
-DOMAIN-SUFFIX,sa.api.intl.miui.com, AdBlock
-DOMAIN-SUFFIX,tracking.miui.com, AdBlock
-DOMAIN-SUFFIX,tracking.intl.miui.com, AdBlock
-DOMAIN-SUFFIX,tracking.india.miui.com, AdBlock
-DOMAIN-SUFFIX,tracking.rus.miui.com, AdBlock
-DOMAIN-SUFFIX,analytics.oneplus.cn, AdBlock
-DOMAIN-SUFFIX,click.oneplus.cn, AdBlock
-DOMAIN-SUFFIX,click.oneplus.com, AdBlock
-DOMAIN-SUFFIX,open.oneplus.net, AdBlock
-DOMAIN-SUFFIX,metrics.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics1.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics2.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics3.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics4.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics5.data.hicloud.com, AdBlock
-DOMAIN-SUFFIX,logservice.hicloud.com, AdBlock
-DOMAIN-SUFFIX,logservice1.hicloud.com, AdBlock
-DOMAIN-SUFFIX,metrics-dra.dt.hicloud.com, AdBlock
-DOMAIN-SUFFIX,logbak.hicloud.com, AdBlock
-DOMAIN-SUFFIX,ad.samsungadhub.com, AdBlock
-DOMAIN-SUFFIX,samsungadhub.com, AdBlock
-DOMAIN-SUFFIX,samsungads.com, AdBlock
-DOMAIN-SUFFIX,smetrics.samsung.com, AdBlock
-DOMAIN-SUFFIX,nmetrics.samsung.com, AdBlock
-DOMAIN-SUFFIX,samsung-com.112.2o7.net, AdBlock
-DOMAIN-SUFFIX,business.samsungusa.com, AdBlock
-DOMAIN-SUFFIX,analytics.samsungknox.com, AdBlock
-DOMAIN-SUFFIX,bigdata.ssp.samsung.com, AdBlock
-DOMAIN-SUFFIX,analytics-api.samsunghealthcn.com, AdBlock
-DOMAIN-SUFFIX,config.samsungads.com, AdBlock
-DOMAIN-SUFFIX,metrics.apple.com, AdBlock
-DOMAIN-SUFFIX,securemetrics.apple.com, AdBlock
-DOMAIN-SUFFIX,supportmetrics.apple.com, AdBlock
-DOMAIN-SUFFIX,metrics.icloud.com, AdBlock
-DOMAIN-SUFFIX,metrics.mzstatic.com, AdBlock
-DOMAIN-SUFFIX,dzc-metrics.mzstatic.com, AdBlock
-DOMAIN-SUFFIX,books-analytics-events.news.apple-dns.net, AdBlock
-DOMAIN-SUFFIX,books-analytics-events.apple.com, AdBlock
-DOMAIN-SUFFIX,stocks-analytics-events.apple.com, AdBlock
-DOMAIN-SUFFIX,stocks-analytics-events.news.apple-dns.net, AdBlock
-DOMAIN-KEYWORD,pagead2, AdBlock
-DOMAIN-KEYWORD,adservice, AdBlock
-DOMAIN-KEYWORD,.ads, AdBlock
-DOMAIN-KEYWORD,.ad, AdBlock
-DOMAIN-KEYWORD,adservetx, AdBlock
-DOMAIN-KEYWORD,mediavisor, AdBlock
-DOMAIN-KEYWORD,adtago, AdBlock
-DOMAIN-KEYWORD,analyticsengine, AdBlock
-DOMAIN-KEYWORD,advice-ads, AdBlock
-DOMAIN-KEYWORD,affiliationjs, AdBlock
-DOMAIN-KEYWORD,advertising, AdBlock
-DOMAIN-KEYWORD,adserver, AdBlock
-DOMAIN-KEYWORD,pclick, AdBlock
-DOMAIN-KEYWORD,partnerads, AdBlock
-DOMAIN-KEYWORD,appmetrica, AdBlock
-DOMAIN-KEYWORD,adfox, AdBlock
-DOMAIN-KEYWORD,adsdk, AdBlock
-DOMAIN-KEYWORD,clck, AdBlock
-DOMAIN-KEYWORD,metrika, AdBlock
-DOMAIN-KEYWORD,api-hotjar, AdBlock
-DOMAIN-KEYWORD,hotjar-analytics, AdBlock
-DOMAIN-KEYWORD,hotjar, AdBlock
-DOMAIN-KEYWORD,luckyorange, AdBlock
-DOMAIN-KEYWORD,bugsnag, AdBlock
-DOMAIN-KEYWORD,sentry-cdn, AdBlock
-DOMAIN-KEYWORD,getsentry, AdBlock
-DOMAIN-KEYWORD,ads-api, AdBlock
-DOMAIN-KEYWORD,ads-twitter, AdBlock
-DOMAIN-KEYWORD,pointdrive, AdBlock
-DOMAIN-KEYWORD,ads-dev, AdBlock
-DOMAIN-KEYWORD,trk, AdBlock
-DOMAIN-KEYWORD,cleverads, AdBlock
-DOMAIN-KEYWORD,ads-sg, AdBlock
-DOMAIN-KEYWORD,analytics-sg, AdBlock
-DOMAIN-KEYWORD,adspecs, AdBlock
-DOMAIN-KEYWORD,adsfs, AdBlock
-DOMAIN-KEYWORD,adx, AdBlock
-DOMAIN-KEYWORD,tracking, AdBlock
-DOMAIN-KEYWORD,logservice, AdBlock
-DOMAIN-KEYWORD,logbak, AdBlock
-DOMAIN-KEYWORD,smetrics, AdBlock
-DOMAIN-KEYWORD,nmetrics, AdBlock
-DOMAIN-KEYWORD,securemetrics, AdBlock
-DOMAIN-KEYWORD,supportmetrics, AdBlock
-DOMAIN-KEYWORD,books-analytics, AdBlock
-DOMAIN-KEYWORD,stocks-analytics, AdBlock
-DOMAIN-SUFFIX,analytics.s3.amazonaws.com, AdBlock
-DOMAIN-SUFFIX,analytics.google.com, AdBlock
-DOMAIN-SUFFIX,click.googleanalytics.com, AdBlock
-DOMAIN-SUFFIX,events.reddit.com, AdBlock
-DOMAIN-SUFFIX,business-api.tiktok.com, AdBlock
-DOMAIN-SUFFIX,log.byteoversea.com, AdBlock
-DOMAIN-SUFFIX,udc.yahoo.com, AdBlock
-DOMAIN-SUFFIX,udcm.yahoo.com, AdBlock
-DOMAIN-SUFFIX,auction.unityads.unity3d.com, AdBlock
-DOMAIN-SUFFIX,webview.unityads.unity3d.com, AdBlock
-DOMAIN-SUFFIX,config.unityads.unity3d.com, AdBlock
-DOMAIN-SUFFIX,adfstat.yandex.ru, AdBlock
-DOMAIN-SUFFIX,iot-eu-logser.realme.com, AdBlock
-DOMAIN-SUFFIX,iot-logser.realme.com, AdBlock
-DOMAIN-SUFFIX,bdapi-ads.realmemobile.com, AdBlock
-DOMAIN-SUFFIX,grs.hicloud.com, AdBlock
-DOMAIN-SUFFIX,weather-analytics-events.apple.com, AdBlock
-DOMAIN-SUFFIX,notes-analytics-events.apple.com, AdBlock
-FINAL,Select Group`;
+${CLASH_RULES}`;
 }
 async function generateHusiSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
   let conf = '';
   let bex = '';
   let count = 1;
@@ -7039,7 +7066,6 @@ async function generateHusiSub(type, bug, geo81, tls, country = null, limit = nu
     const proxyHost = parts[0];
     const proxyPort = parts[1] || 443;
     const emojiFlag = getEmojiFlag(line.split(',')[2]); // Konversi ke emoji bendera
-    const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim(); // Hapus newline dan spasi ekstra
     let ispName = sanitize(`${emojiFlag} (${line.split(',')[2]}) ${line.split(',')[3]} ${count ++}`);
     const UUIDS = `${generateUUIDv4()}`;
     const ports = tls ? '443' : '80';
@@ -7346,25 +7372,7 @@ ${conf}
 }`;
 }
 async function generateSingboxSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
   let conf = '';
   let bex = '';
   let count = 1;
@@ -7374,7 +7382,6 @@ async function generateSingboxSub(type, bug, geo81, tls, country = null, limit =
     const proxyHost = parts[0];
     const proxyPort = parts[1] || 443;
     const emojiFlag = getEmojiFlag(line.split(',')[2]); // Konversi ke emoji bendera
-    const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim(); // Hapus newline dan spasi ekstra
     let ispName = sanitize(`${emojiFlag} (${line.split(',')[2]}) ${line.split(',')[3]} ${count ++}`);
     const UUIDS = `${generateUUIDv4()}`;
     const ports = tls ? '443' : '80';
@@ -7635,25 +7642,7 @@ ${conf}
 }`;
 }
 async function generateNekoboxSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
   let conf = '';
   let bex = '';
   let count = 1;
@@ -7663,7 +7652,6 @@ async function generateNekoboxSub(type, bug, geo81, tls, country = null, limit =
     const proxyHost = parts[0];
     const proxyPort = parts[1] || 443;
     const emojiFlag = getEmojiFlag(line.split(',')[2]); // Konversi ke emoji bendera
-    const sanitize = (text) => text.replace(/[\n\r]+/g, "").trim(); // Hapus newline dan spasi ekstra
     let ispName = sanitize(`${emojiFlag} (${line.split(',')[2]}) ${line.split(',')[3]} ${count ++}`);
     const UUIDS = `${generateUUIDv4()}`;
     const ports = tls ? '443' : '80';
@@ -7961,27 +7949,7 @@ ${conf}
 }`;
 }
 async function generateV2rayngSub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
 
   let conf = '';
 
@@ -8033,25 +8001,7 @@ async function generateV2rayngSub(type, bug, geo81, tls, country = null, limit =
   return base64Conf;
 }
 async function generateV2raySub(type, bug, geo81, tls, country = null, limit = null) {
-  const proxyList = await getProxyList();
-  let ips = proxyList.map(p => `${p.proxyIP},${p.proxyPort},${p.country},${p.org}`);
-  if (country && country.toLowerCase() === 'random') {
-    // Pilih data secara acak jika country=random
-    ips = ips.sort(() => Math.random() - 0.5); // Acak daftar proxy
-  } else if (country) {
-    // Filter berdasarkan country jika bukan "random"
-    ips = ips.filter(line => {
-      const parts = line.split(',');
-      if (parts.length > 1) {
-        const lineCountry = parts[2].toUpperCase();
-        return lineCountry === country.toUpperCase();
-      }
-      return false;
-    });
-  }
-  if (limit && !isNaN(limit)) {
-    ips = ips.slice(0, limit); // Batasi jumlah proxy berdasarkan limit
-  }
+  const ips = await getProxies(country, limit);
   let conf = '';
   for (let line of ips) {
     const parts = line.split(',');
@@ -8090,7 +8040,7 @@ async function generateV2raySub(type, bug, geo81, tls, country = null, limit = n
       }
     }
   }
-  
+
   return conf;
 }
 function generateUUIDv4() {
