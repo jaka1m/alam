@@ -248,35 +248,37 @@ export default {
         try {
             const url = new URL(request.url);
             const upgradeHeader = request.headers.get("Upgrade");
-            
-            if (upgradeHeader === "websocket") {
+
+            if (upgradeHeader && upgradeHeader.toLowerCase() === "websocket") {
                 // Perbaikan format path untuk mencocokkan /Free-VPN-CF-Geo-Project/ip=port
                 // regex ini menangkap path yang dimulai dengan project name diikuti IP dan Port (bisa pakai : = -)
                 const pathPattern = /^\/Free-VPN-CF-Geo-Project\/(.+[:=-]\d+)$/i;
                 const match = url.pathname.match(pathPattern);
-                
+
                 if (match) {
                     // Normalisasi pemisah menjadi ':' agar mudah diproses di handleTCPOutbound
-                    globalThis.pxip = match[1].replace(/[=-]/, ':');
-                    return await websocketHandler(request);
+                    const pxip = match[1].replace(/[=-]/, ':');
+                    return await websocketHandler(request, pxip);
                 }
-                
+
                 // Fallback untuk format lama /ip:port
                 const oldMatch = url.pathname.match(/^\/(.+[:=-]\d+)$/);
                 if (oldMatch) {
-                    globalThis.pxip = oldMatch[1].replace(/[=-]/, ':');
-                    return await websocketHandler(request);
+                    const pxip = oldMatch[1].replace(/[=-]/, ':');
+                    return await websocketHandler(request, pxip);
                 }
             }
-            
-            return new Response("Not Found", { status: 404 });
+
+            return new Response(renderLandingPage(url.hostname), {
+                headers: { "Content-Type": "text/html; charset=utf-8" }
+            });
         } catch (err) {
             return new Response(`Error: ${err.toString()}`, { status: 500 });
         }
     },
 };
 
-async function websocketHandler(request) {
+async function websocketHandler(request, pxip) {
     const webSocketPair = new WebSocketPair();
     const [client, webSocket] = Object.values(webSocketPair);
     webSocket.accept();
@@ -336,7 +338,7 @@ async function websocketHandler(request) {
             }
 
             handleTCPOutbound(remoteSocketWrapper, protocolHeader.addressRemote, protocolHeader.portRemote,
-                protocolHeader.rawClientData, webSocket, protocolHeader.version, log);
+                protocolHeader.rawClientData, webSocket, protocolHeader.version, pxip, log);
         },
         close() {
             log(`readableWebSocketStream closed`);
@@ -662,8 +664,38 @@ async function remoteSocketToWS(remoteSocket, webSocket, responseHeader, retry, 
     }
 }
 
-async function handleTCPOutbound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, responseHeader, log) {
+function isReservedIP(ip) {
+    const ipv4Reserved = [
+        /^10\./,                // Private-use networks
+        /^127\./,               // Loopback
+        /^169\.254\./,          // Link-local
+        /^172\.(1[6-9]|2[0-9]|3[01])\./, // Private-use networks
+        /^192\.0\.0\./,         // IETF Protocol Assignments
+        /^192\.0\.2\./,         // Test-Net-1
+        /^192\.168\./,          // Private-use networks
+        /^198\.18\./,           // Network interconnect device benchmark testing
+        /^198\.51\.100\./,      // Test-Net-2
+        /^203\.0\.113\./,       // Test-Net-3
+        /^224\./,               // IP multicast
+        /^240\./                // Reserved for future use
+    ];
+    if (ipv4Reserved.some(regex => regex.test(ip))) return true;
+
+    const ipv6Reserved = [
+        /^::1$/,                // Loopback
+        /^fc00:/i,              // Unique local address
+        /^fe80:/i               // Link-local address
+    ];
+    if (ipv6Reserved.some(regex => regex.test(ip))) return true;
+
+    return false;
+}
+
+async function handleTCPOutbound(remoteSocket, addressRemote, portRemote, rawClientData, webSocket, responseHeader, pxip, log) {
     async function connectAndWrite(address, port) {
+        if (isReservedIP(address)) {
+            throw new Error(`SSRF Protection: Connection to reserved IP ${address} is not allowed`);
+        }
         const tcpSocket = connect({
             hostname: address,
             port
@@ -676,8 +708,8 @@ async function handleTCPOutbound(remoteSocket, addressRemote, portRemote, rawCli
         return tcpSocket;
     }
     async function retry() {
-        // Pemisahan IP dan Port dari globalThis.pxip (format ip:port)
-        const parts = globalThis.pxip?.split(':') || [];
+        // Pemisahan IP dan Port dari pxip (format ip:port)
+        const parts = pxip?.split(':') || [];
         const tcpSocket = await connectAndWrite(
             parts[0] || addressRemote,
             parseInt(parts[1]) || portRemote
@@ -794,4 +826,181 @@ function safeCloseWebSocket(socket) {
     } catch (e) {
         console.error("safeCloseWebSocket error", e);
     }
+}
+
+function renderLandingPage(hostName) {
+    const uuid = vmessUUID;
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Worker VPN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+        }
+        .config-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: monospace;
+            word-break: break-all;
+            font-size: 0.8rem;
+            color: #eee;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="glass p-8 w-full max-w-4xl shadow-2xl text-white">
+        <h1 class="text-3xl font-bold mb-6 text-center"><i class="fas fa-shield-alt mr-2"></i>VPN Dashboard</h1>
+
+        <div class="mb-6">
+            <label class="block mb-2 text-sm font-medium">Proxy IP / Bug (Optional)</label>
+            <input type="text" id="proxy-ip" placeholder="e.g. 104.18.2.161"
+                class="w-full bg-white/20 border border-white/30 rounded-lg p-2.5 text-white placeholder-white/50 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- VLESS -->
+            <div class="bg-white/10 rounded-xl p-4">
+                <h2 class="text-xl font-semibold mb-3 border-b border-white/20 pb-2">VLESS</h2>
+                <div>
+                    <p class="text-xs uppercase text-white/60">TLS (Port 443)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="vless-tls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('vless-tls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs uppercase text-white/60">NTLS (Port 80)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="vless-ntls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('vless-ntls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VMess -->
+            <div class="bg-white/10 rounded-xl p-4">
+                <h2 class="text-xl font-semibold mb-3 border-b border-white/20 pb-2">VMess</h2>
+                <div>
+                    <p class="text-xs uppercase text-white/60">TLS (Port 443)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="vmess-tls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('vmess-tls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs uppercase text-white/60">NTLS (Port 80)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="vmess-ntls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('vmess-ntls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trojan -->
+            <div class="bg-white/10 rounded-xl p-4">
+                <h2 class="text-xl font-semibold mb-3 border-b border-white/20 pb-2">Trojan</h2>
+                <div>
+                    <p class="text-xs uppercase text-white/60">TLS (Port 443)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="trojan-tls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('trojan-tls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs uppercase text-white/60">NTLS (Port 80)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="trojan-ntls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('trojan-ntls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shadowsocks -->
+            <div class="bg-white/10 rounded-xl p-4">
+                <h2 class="text-xl font-semibold mb-3 border-b border-white/20 pb-2">Shadowsocks</h2>
+                <div>
+                    <p class="text-xs uppercase text-white/60">TLS (Port 443)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="ss-tls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('ss-tls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs uppercase text-white/60">NTLS (Port 80)</p>
+                    <div class="flex items-center gap-2">
+                        <div id="ss-ntls" class="config-box flex-grow">Loading...</div>
+                        <button onclick="copyToClipboard('ss-ntls')" class="bg-blue-500 hover:bg-blue-600 p-2 rounded-lg transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-sm text-white/60">
+            <p>WebSocket Path: <code class="bg-black/20 px-2 py-1 rounded">/Free-VPN-CF-Geo-Project/{ip}:{port}</code></p>
+        </div>
+    </div>
+
+    <script>
+        const hostName = "${hostName}";
+        const uuid = "${uuid}";
+        const proxyInput = document.getElementById('proxy-ip');
+
+        function updateConfigs() {
+            const proxy = proxyInput.value || hostName;
+            const path = "/Free-VPN-CF-Geo-Project/" + (proxyInput.value ? proxyInput.value + ":443" : "1.1.1.1:443");
+            const pathNTLS = "/Free-VPN-CF-Geo-Project/" + (proxyInput.value ? proxyInput.value + ":80" : "1.1.1.1:80");
+
+            // VLESS
+            document.getElementById('vless-tls').innerText = "vless://" + uuid + "@" + proxy + ":443?encryption=none&security=tls&sni=" + hostName + "&type=ws&host=" + hostName + "&path=" + encodeURIComponent(path) + "%3Btls#" + hostName;
+            document.getElementById('vless-ntls').innerText = "vless://" + uuid + "@" + proxy + ":80?encryption=none&security=none&type=ws&host=" + hostName + "&path=" + encodeURIComponent(pathNTLS) + "#" + hostName;
+
+            // VMess
+            const vmessTls = { v: "2", ps: hostName + "_TLS", add: proxy, port: "443", id: uuid, aid: "0", scy: "auto", net: "ws", type: "none", host: hostName, path: path, tls: "tls", sni: hostName };
+            const vmessNtls = { v: "2", ps: hostName + "_NTLS", add: proxy, port: "80", id: uuid, aid: "0", scy: "auto", net: "ws", type: "none", host: hostName, path: pathNTLS, tls: "", sni: "" };
+            document.getElementById('vmess-tls').innerText = "vmess://" + btoa(JSON.stringify(vmessTls));
+            document.getElementById('vmess-ntls').innerText = "vmess://" + btoa(JSON.stringify(vmessNtls));
+
+            // Trojan
+            document.getElementById('trojan-tls').innerText = "trojan://" + uuid + "@" + proxy + ":443?security=tls&sni=" + hostName + "&type=ws&host=" + hostName + "&path=" + encodeURIComponent(path) + "%3Btls#" + hostName;
+            document.getElementById('trojan-ntls').innerText = "trojan://" + uuid + "@" + proxy + ":80?security=none&type=ws&host=" + hostName + "&path=" + encodeURIComponent(pathNTLS) + "#" + hostName;
+
+            // Shadowsocks
+            const ssConfig = "none:" + uuid;
+            document.getElementById('ss-tls').innerText = "ss://" + btoa(ssConfig) + "@" + proxy + ":443?plugin=v2ray-plugin%3Bhost%3D" + hostName + "%3Bpath%3D" + encodeURIComponent(path) + "%3Btls#" + hostName;
+            document.getElementById('ss-ntls').innerText = "ss://" + btoa(ssConfig) + "@" + proxy + ":80?plugin=v2ray-plugin%3Bhost%3D" + hostName + "%3Bpath%3D" + encodeURIComponent(pathNTLS) + "#" + hostName;
+        }
+
+        proxyInput.addEventListener('input', updateConfigs);
+        updateConfigs();
+
+        function copyToClipboard(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
+    `;
 }
