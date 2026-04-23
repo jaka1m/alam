@@ -2467,12 +2467,20 @@ body::before {
 
                         <div class="card p-5 mb-5">
                             <div class="flex justify-between items-center mb-3">
-                                <h3 class="text-base font-medium text-indigo-400">Connection URL</h3>
-                                <button id="copy-url" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+                                <h3 class="text-base font-medium text-indigo-400">TLS Connection URL</h3>
+                                <button id="copy-tls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
                                     <i class="far fa-copy mr-1"></i> Copy
                                 </button>
                             </div>
-                            <div id="connection-url" class="text-xs glass-code p-4 rounded-lg break-all font-mono"></div>
+                            <div id="connection-tls" class="text-xs glass-code p-4 rounded-lg break-all font-mono mb-4"></div>
+
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-base font-medium text-indigo-400">NTLS Connection URL</h3>
+                                <button id="copy-ntls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+                                    <i class="far fa-copy mr-1"></i> Copy
+                                </button>
+                            </div>
+                            <div id="connection-ntls" class="text-xs glass-code p-4 rounded-lg break-all font-mono"></div>
                         </div>
 
                         <div class="card p-5">
@@ -2779,64 +2787,65 @@ serverDomainElements.forEach(element => {
           fullDomain = bugType + '.' + serverDomain;
         }
       }
-      let result = '';
+      let tlsResult = '';
+      let ntlsResult = '';
+
+      const name = encodeURIComponent(formData.get("name"));
+      const uuid = formData.get("uuid");
+      const path = encodeURIComponent(formData.get("path"));
+      const password = formData.get("password");
+
       if (formPrefix === 'vmess') {
-        const securityOption = formData.get("security");
-        const securityValue = securityOption === "tls" ? 443 : 80;
-        const _0x154eee = {
-          'v': '2',
-          'ps': formData.get("name"),
-          'add': domainForWildcard,
-          'port': securityValue,
-          'id': formData.get('uuid'),
-          'aid': '0',
-          'net': 'ws',
-          'type': 'none',
-          'host': domainWithPrefix,
-          'path': formData.get("path"),
-          'tls': securityOption === "tls" ? "tls" : '',
-          'sni': fullDomain,
-          'scy': "zero"
+        const tlsObj = {
+          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 443, 'id': formData.get('uuid'),
+          'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
+          'tls': 'tls', 'sni': fullDomain, 'scy': "zero"
         };
-        result = "vmess://" + btoa(JSON.stringify(_0x154eee));
+        const ntlsObj = {
+          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 80, 'id': formData.get('uuid'),
+          'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
+          'tls': '', 'sni': '', 'scy': "zero"
+        };
+        tlsResult = "vmess://" + btoa(JSON.stringify(tlsObj));
+        ntlsResult = "vmess://" + btoa(JSON.stringify(ntlsObj));
       } else if (formPrefix === "vless") {
-        const uuid = formData.get("uuid");
-        const path = encodeURIComponent(formData.get("path"));
-        const security = formData.get("security");
-        const name = encodeURIComponent(formData.get("name"));
-        const port = security === "tls" ? 443 : 80;
-        result = \`vless://\${uuid}@\${domainForWildcard}:\${port}?encryption=none&security=\${security}&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
+        tlsResult = \`vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
+        ntlsResult = \`vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
       } else if (formPrefix === "trojan") {
-        const password = formData.get("password");
-        const path = encodeURIComponent(formData.get("path"));
-        const security = formData.get('security');
-        const name = encodeURIComponent(formData.get("name"));
-        const port = security === 'tls' ? 443 : 80;
-        result = \`trojan://\${password}@\${domainForWildcard}:\${port}?security=\${security}&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
+        tlsResult = \`trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
+        ntlsResult = \`trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
       } else if (formPrefix === 'ss') {
-        const password = formData.get("password");
-        const name = encodeURIComponent(formData.get("name"));
-        const path = encodeURIComponent(formData.get('path'));
-        const security = formData.get("security");
-        const port = security === "tls" ? 443 : 80;
         const encodedPassword = btoa("none:" + password);
-        result = \`ss://\${encodedPassword}@\${domainForWildcard}:\${port}?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=\${security}&sni=\${fullDomain}#\${name}\`;
+        tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${name}\`;
+        ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
       }
-      document.getElementById('connection-url').textContent = result;
-      generateQRCode(result);
+
+      document.getElementById('connection-tls').textContent = tlsResult;
+      document.getElementById('connection-ntls').textContent = ntlsResult;
+      generateQRCode(tlsResult);
       accountCreationSection.classList.add("hidden");
       resultSection.classList.remove("hidden");
     });
   });
-  document.getElementById("copy-url").addEventListener("click", function () {
-    const textToCopy = document.getElementById("connection-url").textContent;
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      this.innerHTML = "<i class=\\"fas fa-check mr-1\\"></i> Copied!";
-      setTimeout(() => {
-        this.innerHTML = "<i class=\\"far fa-copy mr-1\\"></i> Copy";
-      }, 0x7d0);
-    });
-  });
+
+  const setupCopyButton = (buttonId, textId) => {
+    const btn = document.getElementById(buttonId);
+    if (btn) {
+      btn.addEventListener("click", function() {
+        const textToCopy = document.getElementById(textId).textContent;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          const originalContent = this.innerHTML;
+          this.innerHTML = "<i class=\\"fas fa-check mr-1\\"></i> Copied!";
+          setTimeout(() => {
+            this.innerHTML = originalContent;
+          }, 2000);
+        });
+      });
+    }
+  };
+
+  setupCopyButton("copy-tls", "connection-tls");
+  setupCopyButton("copy-ntls", "connection-ntls");
   document.getElementById("download-qr").addEventListener("click", () => {
     downloadQRCode();
   });
