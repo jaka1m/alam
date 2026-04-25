@@ -10,11 +10,11 @@ export default {
         if (proxyMatch) {
             const targetHost = proxyMatch[1];
             const targetPort = parseInt(proxyMatch[2]);
-            
+
             if (isPrivateIP(targetHost)) {
                 return new Response('Forbidden: Private IP', { status: 403 });
             }
-            
+
             return await handleWebSocket(request, targetHost, targetPort);
         }
     }
@@ -56,13 +56,13 @@ async function handleWebSocket(request, targetHost, targetPort) {
                         server.close();
                     }
                 });
-                
+
                 server.addEventListener('close', async () => {
                     try {
                         await writer.close();
                     } catch (err) {}
                 });
-                
+
                 server.addEventListener('error', () => {
                     try {
                         writer.abort();
@@ -112,57 +112,58 @@ const htmlContent = `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEO-PROJECT </title>
-    
+
     <!-- Favicon -->
     <link rel="icon" href="https://raw.githubusercontent.com/jaka2m/project/refs/heads/main/social/bot.png">
-    
+
     <!-- Meta tags -->
     <meta property="og:image:secure_url" content="https://raw.githubusercontent.com/akulelaki696/bg/refs/heads/main/20250106_010158.jpg"/>
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)"/>
     <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+
     <!-- External CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- External JavaScript -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <style>
-      
+
 :root {
   /* Color variables */
-  --primary: #6a11cb;
-  --primary-dark: #4f46e5;
-  --primary-light: #a0a0ff;
+  --primary: #00bcd4; /* Teal for buttons */
+  --primary-dark: #0097a7;
+  --primary-light: #b2ebf2;
   --secondary: #2575fc;
   --secondary-dark: #1e40af;
   --accent: #ff6b6b;
-  --dark: #0f0c29;
-  --dark-light: #302b63;
+  --dark: #0d1117; /* Darker background */
+  --dark-light: #161b22;
   --light: #ffffff;
-  --gray: #64748b;
-  --gray-light: #a0a0ff;
-  --gray-dark: #334155;
-  --primary-color: #6a11cb;
-  --secondary-color: #2575fc;
-  --accent-color: #ff6b6b;
-  --dark-bg: #0f0c29;
-  --dark-bg-gradient-1: #302b63;
-  --dark-bg-gradient-2: #24243e;
-  --card-bg: rgba(15, 14, 32, 0.8);
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0ff;
-  --text-muted: rgba(255, 255, 255, 0.5);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --success-color: #38ef7d;
+  --gray: #8b949e;
+  --gray-light: #c9d1d9;
+  --gray-dark: #30363d;
+  --primary-color: #00bcd4;
+  --secondary-color: #008ba3;
+  --accent-color: #f85149;
+  --dark-bg: #0d1117;
+  --dark-bg-gradient-1: #0d1117;
+  --dark-bg-gradient-2: #161b22;
+  --card-bg: #161b22;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --border-color: #30363d;
+  --success-color: #3fb950;
+  --error-color: #f85149;
 
   /* Common UI elements */
   --border-radius-sm: 8px;
@@ -190,25 +191,12 @@ const htmlContent = `<!DOCTYPE html>
 }
 
 body {
-  font-family: "Rajdhani", sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
-  background: linear-gradient(135deg, var(--dark-bg), var(--dark-bg-gradient-1), var(--dark-bg-gradient-2));
-  background-attachment: fixed;
+  background: var(--dark-bg);
   min-height: 100vh;
   position: relative;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 30%, rgba(106, 17, 203, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(37, 117, 252, 0.15) 0%, transparent 40%);
-  z-index: -1;
 }
 
 a {
@@ -648,7 +636,7 @@ body::before {
 
 .container {
   width: 100%;
-  max-width: 480px;
+  max-width: 1000px;
   padding: 0 0.75rem;
   margin: 0 auto 1rem auto;
 }
@@ -708,7 +696,7 @@ body::before {
 .title {
   font-family: "Orbitron", sans-serif;
   font-weight: 700;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   letter-spacing: 1px;
   margin: 0;
   background: linear-gradient(90deg, var(--primary), var(--secondary));
@@ -1023,19 +1011,79 @@ body::before {
 
 /* Card styles */
 .proxy-card {
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: 12px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid rgba(106, 17, 203, 0.1);
-  transition: all 0.3s ease;
+  background: #161b22;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border: 1px solid #30363d;
+  transition: all 0.2s ease;
 }
 
 .proxy-card:hover {
-  background: rgba(51, 65, 85, 0.5);
-  border-color: rgba(106, 17, 203, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-color: #8b949e;
+}
+
+.status-badge-live {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.status-badge-live::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: #3fb950;
+  border-radius: 50%;
+}
+
+.status-badge-off {
+  background: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.status-badge-off::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: #f85149;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6px;
+  color: white;
+  content: "×";
+}
+
+.pilih-btn {
+  background: #00bcd4;
+  color: #0d1117;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.pilih-btn:hover {
+  opacity: 0.9;
 }
 
 /* Pagination styles */
@@ -1615,24 +1663,24 @@ body::before {
   text-align: center;
 }
 .text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 0.8rem;
+  line-height: 1.2rem;
 }
 .text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
+  font-size: 0.7rem;
+  line-height: 0.9rem;
 }
 .text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 .text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 1.1rem;
+  line-height: 1.5rem;
 }
 .text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 .text-4xl {
   font-size: 2.25rem;
@@ -1859,7 +1907,7 @@ body::before {
 /* Footer styles */
 .footer {
   width: 100%;
-  max-width: 480px;
+  max-width: 1000px;
   background: rgba(15, 14, 32, 0.8);
   border-radius: 12px;
   padding: 1.2rem;
@@ -2029,18 +2077,18 @@ body::before {
     </style>
 </head>
 <body>
-    <div class="container" style="width: 100%; max-width: 480px; padding: 0 0.75rem; margin-bottom: 1rem;">
+    <div class="container" style="width: 100%; max-width: 1000px; padding: 0 0.75rem; margin-bottom: 1rem;">
         <div class="card">
             <div class="tech-detail tech-detail-1"></div>
             <div class="tech-detail tech-detail-2"></div>
             <div class="tech-detail tech-detail-3"></div>
-            
+
             <div class="title-container">
                 <h1 class="title">GEO - PROJECT</h1>
                 <p class="subtitle">Advanced Link Generator</p>
             </div>
 
-            
+
             <div class="p-1">
     <!-- Proxy List Section -->
     <div id="proxy-list-section">
@@ -2068,20 +2116,20 @@ body::before {
 
                     <div id="custom-url-input" class="mb-5 hidden">
     <div class="flex gap-2"> <!-- tambah gap biar ada jarak -->
-        <input type="text" id="proxy-url" class="w-2/3 px-4 py-2.5 glass-input rounded-lg text-sm" 
-            placeholder="Enter custom proxy list URL" 
+        <input type="text" id="proxy-url" class="w-2/3 px-4 py-2.5 glass-input rounded-lg text-sm"
+            placeholder="Enter custom proxy list URL"
             value="https://raw.githubusercontent.com/paoandest/botak/refs/heads/main/cek/proxyList.txt">
         <button id="load-custom-url" class="w-100 primary-btn py-1.5 px-4 rounded-md flex items-center justify-center text-xs">
             Load
         </button>
     </div>
 </div>
-                    
+
                     <div id="loading-indicator" class="text-center py-10 hidden">
                         <div class="loading-spinner mx-auto mb-4"></div>
                         <p class="text-indigo-300 text-sm">Loading proxy list...</p>
                     </div>
-                    
+
                     <!-- Search input -->
                     <div class="mb-4">
                         <div class="relative">
@@ -2091,12 +2139,12 @@ body::before {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Mobile-friendly proxy list -->
                     <div id="proxy-list-container" class="mt-4">
                         <!-- Proxy cards will be populated here -->
                     </div>
-                    
+
                     <!-- Pagination controls -->
                     <div id="pagination-container" class="flex justify-center items-center mt-6 space-x-2">
                         <!-- Pagination buttons will be added here -->
@@ -2106,13 +2154,13 @@ body::before {
                     <div id="proxy-count-info" class="text-center mt-3 text-sm text-gray-400">
                         <!-- Proxy count will be shown here -->
                     </div>
-                    
+
                     <div id="no-proxies-message" class="text-center py-10 hidden">
                         <i class="fas fa-exclamation-circle text-rose-400 text-4xl mb-3"></i>
                         <p class="text-gray-300 text-sm">No proxies found. Please refresh or try a different URL.</p>
                     </div>
                 </div>
-                
+
                 <!-- Account Creation Section -->
                 <div id="account-creation-section" class="mt-6 hidden">
                     <div class="pt-4">
@@ -2126,15 +2174,15 @@ body::before {
                                 <i class="fas fa-arrow-left mr-2"></i> Back to List
                             </button>
                         </div>
-                        
+
                         <div class="card p-5 mb-6 overflow-hidden relative">
                             <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/5 to-transparent rounded-bl-full pointer-events-none"></div>
-                            
+
                             <h3 class="text-base font-medium text-indigo-400 mb-4 flex items-center">
                                 <i class="fas fa-server mr-2"></i>
                                 Selected Proxy
                             </h3>
-                            
+
                             <div class="grid grid-cols-2 gap-3 mb-4">
                                 <div class="flex items-center space-x-2 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30">
                                     <i class="fas fa-building text-indigo-400/70 w-5 text-center"></i>
@@ -2165,7 +2213,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div id="proxy-status-container" class="hidden">
                                 <div id="proxy-status-active" class="hidden rounded-lg p-3 bg-gradient-to-r from-emerald-900/20 to-emerald-800/10 border border-emerald-500/20">
                                     <div class="flex items-center">
@@ -2178,7 +2226,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-dead" class="hidden rounded-lg p-3 bg-gradient-to-r from-rose-900/20 to-rose-800/10 border border-rose-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center mr-3 border border-rose-500/30">
@@ -2190,7 +2238,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-unknown" class="hidden rounded-lg p-3 bg-gradient-to-r from-amber-900/20 to-amber-800/10 border border-amber-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mr-3 border border-amber-500/30">
@@ -2202,7 +2250,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-loading" class="rounded-lg p-3 bg-gradient-to-r from-indigo-900/20 to-indigo-800/10 border border-indigo-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center mr-3 border border-indigo-500/30">
@@ -2216,7 +2264,7 @@ body::before {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Tabs -->
                         <div class="flex border-b border-gray-700 mb-6 overflow-x-auto space-x-1 sm:space-x-0">
                             <button class="tab-btn active py-3 px-4 font-medium text-sm focus:outline-none" data-target="vmess-form">
@@ -2232,41 +2280,43 @@ body::before {
                                 <i class="fas fa-mask mr-2"></i>SS
                             </button>
                         </div>
-                        
+
                         <!-- VMess Form -->
                     <div id="vmess-form" class="protocol-form">
                         <form id="vmess-account-form" class="space-y-5">
-                            <div>
-                                <label for="vmess-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
-                                <input type="text" id="vmess-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                            <div class="flex gap-2 items-end">
+                                <div class="flex-1">
+                                    <label for="vmess-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
+                                    <input type="text" id="vmess-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                                </div>
+                                <div class="w-1/3">
+                                    <label for="vmess-security" class="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                                    <select id="vmess-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
+                                        <option value="tls">TLS</option>
+                                        <option value="none">NTLS</option>
+                                    </select>
+                                </div>
                             </div>
-                            
+
                             <div>
                           <label for="vmess-uuid" class="block text-sm font-medium text-gray-300 mb-2">UUID</label>
                         <input type="text" id="vmess-uuid" name="uuid" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" value="f282b878-8711-45a1-8c69-5564172123c1" required readonly>
                           </div>
-                            
+
                             <div>
                                 <label for="vmess-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="vmess-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
-                            <div>
-                                <label for="vmess-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
-                                <select id="vmess-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
-                                    <option value="tls">TLS</option>
-                                    <option value="none">None</option>
-                                </select>
-                                <input type="hidden" id="vmess-encryption" name="encryption" value="zero">
-                            </div>
-                            
+
+                            <input type="hidden" id="vmess-encryption" name="encryption" value="zero">
+
                             <div>
                                 <label for="vmess-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="vmess-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="vmess-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="vmess-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2282,7 +2332,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                          <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                         <i class="fas fa-plus-circle mr-1 text-sm"></i> Create VMess Account
@@ -2290,15 +2340,24 @@ body::before {
                        </div>
                    </form>
                     </div>
-                    
+
                     <!-- VLESS Form -->
                     <div id="vless-form" class="protocol-form hidden">
                         <form id="vless-account-form" class="space-y-5">
-                            <div>
-                                <label for="vless-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
-                                <input type="text" id="vless-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                            <div class="flex gap-2 items-end">
+                                <div class="flex-1">
+                                    <label for="vless-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
+                                    <input type="text" id="vless-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                                </div>
+                                <div class="w-1/3">
+                                    <label for="vless-security" class="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                                    <select id="vless-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
+                                        <option value="tls">TLS</option>
+                                        <option value="none">NTLS</option>
+                                    </select>
+                                </div>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-uuid" class="block text-sm font-medium text-gray-300 mb-2">UUID</label>
                                 <div class="flex">
@@ -2308,28 +2367,21 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="vless-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
-                            <div>
-                                <label for="vless-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
-                                <select id="vless-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
-                                    <option value="tls">TLS</option>
-                                    <option value="none">None</option>
-                                </select>
-                                <input type="hidden" id="vless-encryption" name="encryption" value="none">
-                            </div>
-                            
+
+                            <input type="hidden" id="vless-encryption" name="encryption" value="none">
+
                             <div>
                                 <label for="vless-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="vless-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="vless-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2345,7 +2397,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                            <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                           <i class="fas fa-plus-circle mr-1 text-sm"></i> Create VLESS Account
@@ -2353,15 +2405,24 @@ body::before {
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Trojan Form -->
                     <div id="trojan-form" class="protocol-form hidden">
                         <form id="trojan-account-form" class="space-y-5">
-                            <div>
-                                <label for="trojan-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
-                                <input type="text" id="trojan-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                            <div class="flex gap-2 items-end">
+                                <div class="flex-1">
+                                    <label for="trojan-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
+                                    <input type="text" id="trojan-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                                </div>
+                                <div class="w-1/3">
+                                    <label for="trojan-security" class="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                                    <select id="trojan-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
+                                        <option value="tls">TLS</option>
+                                        <option value="none">NTLS</option>
+                                    </select>
+                                </div>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                                 <div class="flex">
@@ -2371,28 +2432,21 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="trojan-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
-                            <div>
-                                <label for="trojan-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
-                                <select id="trojan-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
-                                    <option value="tls">TLS</option>
-                                    <option value="none">None</option>
-                                </select>
-                                <input type="hidden" id="trojan-sni" name="sni" value="vm.gpj.web.id">
-                            </div>
-                            
+
+                            <input type="hidden" id="trojan-sni" name="sni" value="vm.gpj.web.id">
+
                             <div>
                                 <label for="trojan-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="trojan-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="trojan-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2408,7 +2462,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                             <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                            <i class="fas fa-plus-circle mr-1 text-sm"></i> Create Trojan Account
@@ -2416,15 +2470,24 @@ body::before {
                          </div>
                          </form>
                     </div>
-                    
+
                     <!-- Shadowsocks Form -->
                     <div id="ss-form" class="protocol-form hidden">
                         <form id="ss-account-form" class="space-y-5">
-                            <div>
-                                <label for="ss-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
-                                <input type="text" id="ss-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                            <div class="flex gap-2 items-end">
+                                <div class="flex-1">
+                                    <label for="ss-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
+                                    <input type="text" id="ss-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
+                                </div>
+                                <div class="w-1/3">
+                                    <label for="ss-security" class="block text-sm font-medium text-gray-300 mb-2">Type</label>
+                                    <select id="ss-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
+                                        <option value="tls">TLS</option>
+                                        <option value="none">NTLS</option>
+                                    </select>
+                                </div>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                                 <div class="flex">
@@ -2434,30 +2497,22 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="ss-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
-                            <div>
-                                <label for="ss-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
-                                <select id="ss-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
-                                    <option value="tls">TLS</option>
-                                    <option value="none">None</option>
-                                </select>
-                            </div>
-                            
+
                             <div>
                                 <label for="ss-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="ss-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
-                                <select id="ss-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">                                	
+                                <select id="ss-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
     <!-- Options will be populated dynamically -->
                              </select>
                                 <div id="ss-manual-bug-container" class="wildcard-container">
@@ -2470,7 +2525,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                          <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                            <i class="fas fa-plus-circle mr-1 text-sm"></i> Create Shadowsocks Account
@@ -2480,7 +2535,7 @@ body::before {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Result Section -->
             <div id="result-section" class="mt-6 hidden">
                 <div class="pt-4">
@@ -2494,25 +2549,29 @@ body::before {
                             <i class="fas fa-arrow-left mr-2"></i> Back
                         </button>
                     </div>
-                    
+
                         <div class="card p-5 mb-5">
-                            <div class="flex justify-between items-center mb-3">
-                                <h3 class="text-base font-medium text-indigo-400">TLS Connection URL</h3>
-                                <button id="copy-tls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
-                                    <i class="far fa-copy mr-1"></i> Copy
-                                </button>
+                            <div id="tls-container">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-base font-medium text-indigo-400">TLS Connection URL</h3>
+                                    <button id="copy-tls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+                                        <i class="far fa-copy mr-1"></i> Copy
+                                    </button>
+                                </div>
+                                <div id="connection-tls" class="text-xs glass-code p-4 rounded-lg break-all font-mono mb-4"></div>
                             </div>
-                            <div id="connection-tls" class="text-xs glass-code p-4 rounded-lg break-all font-mono mb-4"></div>
-                            
-                            <div class="flex justify-between items-center mb-3">
-                                <h3 class="text-base font-medium text-indigo-400">NTLS Connection URL</h3>
-                                <button id="copy-ntls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
-                                    <i class="far fa-copy mr-1"></i> Copy
-                                </button>
+
+                            <div id="ntls-container">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="text-base font-medium text-indigo-400">NTLS Connection URL</h3>
+                                    <button id="copy-ntls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+                                        <i class="far fa-copy mr-1"></i> Copy
+                                    </button>
+                                </div>
+                                <div id="connection-ntls" class="text-xs glass-code p-4 rounded-lg break-all font-mono"></div>
                             </div>
-                            <div id="connection-ntls" class="text-xs glass-code p-4 rounded-lg break-all font-mono"></div>
                         </div>
-                        
+
                         <div class="card p-5">
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="text-base font-medium text-indigo-400">QR Code</h3>
@@ -2524,7 +2583,7 @@ body::before {
                                 <div id="qrcode" class="qrcode-container"></div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                             <button id="create-new" class="flex-1 primary-btn py-3 px-4 rounded-lg flex items-center justify-center text-sm">
                                 <i class="fas fa-plus-circle mr-2"></i> Create Another
@@ -2539,24 +2598,24 @@ body::before {
         </div>
     </div>
 
-   <footer class="footer">
-       <div class="circuit-line circuit-line-1"></div>
-       <div class="circuit-line circuit-line-2"></div>
-       <div class="circuit-line circuit-line-3"></div>
-       <div class="circuit-line circuit-line-4"></div>
-       <div class="circuit-dot circuit-dot-1"></div>
-       <div class="circuit-dot circuit-dot-2"></div>
-       <div class="circuit-dot circuit-dot-3"></div>
-       <div class="circuit-dot circuit-dot-4"></div>
-       
-       <div class="footer-logo">GEO-PROJECT</div>
-       <div class="footer-powered">POWERED BY SECURE TECHNOLOGY</div>
+   <footer class="mt-8 mb-20 flex flex-col items-center gap-4">
+       <div class="flex items-center gap-8 text-gray-400 text-xl">
+           <a href="#"><i class="fab fa-telegram"></i></a>
+           <a href="#"><i class="fas fa-robot"></i></a>
+           <a href="#"><i class="fas fa-users"></i></a>
+       </div>
+       <div class="text-center">
+           <div class="text-gray-500 text-xs">
+               &copy; <span id="current-year"></span> <span class="text-pink-500 font-bold">AFRCloud-NET</span>. All rights reserved.
+           </div>
+           <div class="text-gray-600 text-xs mt-1">Engineered for Privacy & Speed</div>
+       </div>
    </footer>
 
-    <div id="donation-button" class="donate-btn">
-        <i class="fas fa-hand-holding-heart"></i>
+    <div id="donation-button" class="fixed bottom-6 right-6 w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer hover:scale-105 transition-transform z-[1000]">
+        <i class="fas fa-hand-holding-heart text-2xl"></i>
     </div>
-    
+
     <!-- Donation Modal -->
     <div id="donation-modal" class="donation-modal">
         <div class="donation-backdrop" id="donation-backdrop"></div>
@@ -2565,11 +2624,11 @@ body::before {
             <div class="donation-border">
                 <div class="donation-border-animation"></div>
             </div>
-            
+
             <div class="donation-body">
-                
+
                 <h3 class="donation-title">Support Geo-Project</h3>
-                
+
                 <div class="qris-container">
                     <!-- Inner animated border -->
                     <div class="qris-border">
@@ -2579,7 +2638,7 @@ body::before {
                         <img src="https://raw.githubusercontent.com/jaka2m/vpn-cf/refs/heads/master/web/qris.png" alt="Donation QR Code" class="qris-image">
                     </div>
                 </div>
-                
+
                 <p class="donation-small-text">Scan this QR code with your payment app to donate</p>
             </div>
         </div>
@@ -2690,8 +2749,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (searchQuery === '') {
     filteredProxyList = [...proxyList];  // If the input is empty, reset the filtered list
   } else {
-    filteredProxyList = proxyList.filter(proxy => 
-      proxy.provider.toLowerCase().includes(searchQuery) || 
+    filteredProxyList = proxyList.filter(proxy =>
+      proxy.provider.toLowerCase().includes(searchQuery) ||
       proxy.country.toLowerCase().includes(searchQuery)
     );  // Filter the proxy list based on the provider or country
   }
@@ -2711,7 +2770,7 @@ tabButtons.forEach(button => {
     tabButtons.forEach(tab => {
       tab.classList.remove("active");
     });
-    
+
     // Add 'active' class to the clicked tab button
     button.classList.add("active");
 
@@ -2819,7 +2878,7 @@ serverDomainElements.forEach(element => {
       }
       let tlsResult = '';
       let ntlsResult = '';
-      
+
       const name = encodeURIComponent(formData.get("name"));
       const uuid = formData.get("uuid");
       const path = encodeURIComponent(formData.get("path"));
@@ -2849,10 +2908,24 @@ serverDomainElements.forEach(element => {
         tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${name}\`;
         ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
       }
-      
+
       document.getElementById('connection-tls').textContent = tlsResult;
       document.getElementById('connection-ntls').textContent = ntlsResult;
-      generateQRCode(tlsResult);
+
+      const selectedSecurity = formData.get("security");
+      const tlsContainer = document.getElementById('tls-container');
+      const ntlsContainer = document.getElementById('ntls-container');
+
+      if (selectedSecurity === "tls") {
+        tlsContainer.classList.remove("hidden");
+        ntlsContainer.classList.add("hidden");
+        generateQRCode(tlsResult);
+      } else {
+        tlsContainer.classList.add("hidden");
+        ntlsContainer.classList.remove("hidden");
+        generateQRCode(ntlsResult);
+      }
+
       accountCreationSection.classList.add("hidden");
       resultSection.classList.remove("hidden");
     });
@@ -2932,7 +3005,7 @@ function generateQRCodeLastResort(data, qrCodeContainer) {
   try {
     const encodedData = encodeURIComponent(data);
     const qrCodeUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=\${encodedData}\`;
-    
+
     const img = document.createElement('img');
     img.src = qrCodeUrl;
     img.alt = "QR Code";
@@ -2956,7 +3029,7 @@ function downloadQRCode() {
   const canvas = qrCodeContainer.querySelector("canvas");
   const img = qrCodeContainer.querySelector("img");
   const svg = qrCodeContainer.querySelector("svg");
-  
+
   let qrCodeDataUrl = null;
 
   // If QR code is rendered as a canvas
@@ -2966,11 +3039,11 @@ function downloadQRCode() {
     } catch (error) {
       console.error("Canvas to data URL error:", error);
     }
-  } 
+  }
   // If QR code is rendered as an image
   else if (img) {
     qrCodeDataUrl = img.src;
-  } 
+  }
   // If QR code is rendered as an SVG
   else if (svg) {
     try {
@@ -3011,7 +3084,7 @@ function displayFallbackProxyList() {
     'country': 'ID',
     'provider': "PT Pusat Media Indonesia"
   }];
-  
+
   // Update the filtered list
   filteredProxyList = [...proxyList];
   renderProxyList();
@@ -3095,76 +3168,62 @@ function renderProxyList() {
   proxiesToDisplay.forEach((proxy, index) => {
     const proxyIndex = startIndex + index;
 
-    // Membuat card proxy
+    // Membuat card proxy sesuai gambar
     const proxyCard = document.createElement("div");
-    proxyCard.className = "proxy-card group";
+    proxyCard.className = "proxy-card";
 
-    const header = document.createElement("div");
-    header.className = "flex justify-between items-center";
-    header.style.display = 'flex';
-    header.style.flexDirection = 'row';
+    // Layout: Flex Row
+    const flexRow = document.createElement("div");
+    flexRow.className = "flex items-center justify-between";
 
-    const infoContainer = document.createElement("div");
-    infoContainer.className = "flex-1 min-w-0 pr-2";
+    // Left side: Icon + Info
+    const leftSide = document.createElement("div");
+    leftSide.className = "flex items-start gap-3 flex-1 min-w-0";
 
-    const providerContainer = document.createElement('div');
-    providerContainer.className = "flex-items-center";
-    providerContainer.style.display = "flex";
-    providerContainer.style.alignItems = 'center';
-    providerContainer.style.width = "100%";
-    providerContainer.style.position = "relative";
+    const starIcon = document.createElement("i");
+    starIcon.className = "far fa-star text-gray-500 mt-1";
+    leftSide.appendChild(starIcon);
 
-    // Nama provider
+    const info = document.createElement("div");
+    info.className = "min-w-0";
+
     const providerName = document.createElement("div");
-    providerName.className = "font-medium text-sm truncate group-hover:text-indigo-300 transition-colors";
-    providerName.style.maxWidth = "calc(100% - 20px)";
+    providerName.className = "text-sm font-bold text-gray-200 truncate";
     providerName.textContent = proxy.provider;
-    providerContainer.appendChild(providerName);
+    info.appendChild(providerName);
 
-    // Indikator status proxy
-    const statusIndicator = document.createElement("span");
-    statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-gray-500 ml-2 pulse-animation";
-    statusIndicator.style.flexShrink = '0';
-    statusIndicator.style.position = "relative";
-    statusIndicator.innerHTML = '';
-    statusIndicator.title = "Memeriksa...";
-    statusIndicator.id = "proxy-status-" + proxyIndex;
-    providerContainer.appendChild(statusIndicator);
+    const details = document.createElement("div");
+    details.className = "text-xs text-gray-500 mt-0.5 truncate";
+    details.textContent = \`\${proxy.country} | \${proxy.ip}:\${proxy.port}\`;
+    info.appendChild(details);
 
-    infoContainer.appendChild(providerContainer);
+    leftSide.appendChild(info);
 
-    // Detail proxy (negara, IP, port)
-    const proxyDetails = document.createElement("div");
-    proxyDetails.className = "text-xs text-gray-400 mt-1 truncate group-hover:text-gray-300 transition-colors";
-    proxyDetails.style.whiteSpace = 'nowrap';
-    proxyDetails.style.overflow = "hidden";
-    proxyDetails.style.textOverflow = "ellipsis";
-    proxyDetails.textContent = \`\${proxy.country} | \${proxy.ip}:\${proxy.port}\`;
-    infoContainer.appendChild(proxyDetails);
+    // Right side: Status + Pilih Button
+    const rightSide = document.createElement("div");
+    rightSide.className = "flex items-center gap-2 flex-shrink-0";
 
-    // Tombol buat akun
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = 'flex-shrink-0';
-    buttonContainer.style.flexShrink = '0';
+    // Status Badge
+    const statusBadge = document.createElement("div");
+    statusBadge.id = "proxy-status-" + proxyIndex;
+    statusBadge.className = "status-badge-live pulse-animation"; // Initial state
+    statusBadge.textContent = "WAIT";
+    rightSide.appendChild(statusBadge);
 
-    const createButton = document.createElement("button");
-    createButton.className = "create-account-btn primary-btn py-2 px-4 rounded-lg text-xs group-hover:scale-105 transition-transform";
-    createButton.style.whiteSpace = "nowrap";
-    createButton.style.minWidth = "60px";
-    createButton.setAttribute("data-index", proxyIndex);
-    createButton.innerHTML = "Create";
-    buttonContainer.appendChild(createButton);
+    // Pilih Button
+    const pilihBtn = document.createElement("button");
+    pilihBtn.className = "pilih-btn create-account-btn";
+    pilihBtn.textContent = "PILIH";
+    pilihBtn.setAttribute("data-index", proxyIndex);
+    rightSide.appendChild(pilihBtn);
 
-    // Menambahkan elemen header ke dalam card proxy
-    header.appendChild(infoContainer);
-    header.appendChild(buttonContainer);
-
-    // Menambahkan card proxy ke dalam container
-    proxyCard.appendChild(header);
+    flexRow.appendChild(leftSide);
+    flexRow.appendChild(rightSide);
+    proxyCard.appendChild(flexRow);
     proxyListContainer.appendChild(proxyCard);
 
     // Mengecek status proxy
-    checkProxyStatusInList(proxy, statusIndicator);
+    checkProxyStatusInList(proxy, statusBadge);
   });
 
   // Menambahkan event listener ke setiap tombol "Create"
@@ -3181,125 +3240,71 @@ function renderProxyList() {
   proxyCountInfo.textContent = \`Showing \${startIndex + 1}-\${endIndex} of \${filteredProxyList.length} proxies\`;
 }
 
-function checkProxyStatusInList(proxy, statusIndicator) {
+function checkProxyStatusInList(proxy, statusBadge) {
   const statusURL = \`https://cors.api-check.web.id/?url=https://api-check.web.id/check?ip=\${proxy.ip}:\${proxy.port}\`;
 
   fetch(statusURL)
     .then(response => response.json())
     .then(data => {
+      statusBadge.classList.remove("pulse-animation");
       if (data.status === "ACTIVE") {
-        statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-emerald-500 ml-2";
-        statusIndicator.innerHTML = '';
-        statusIndicator.title = "Aktif";
+        statusBadge.className = "status-badge-live";
+        statusBadge.textContent = "LIVE";
       } else {
-        statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-rose-500 ml-2";
-        statusIndicator.innerHTML = '';
-        statusIndicator.title = 'Mati';
+        statusBadge.className = "status-badge-off";
+        statusBadge.textContent = "OFF";
       }
     })
     .catch(error => {
-      statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-amber-500 ml-2";
-      statusIndicator.innerHTML = '';
-      statusIndicator.title = "Tidak diketahui";
+      statusBadge.classList.remove("pulse-animation");
+      statusBadge.className = "status-badge-off";
+      statusBadge.textContent = "ERR";
       console.error("Fetch error:", error);
     });
 }
 
 function renderPagination(totalPages) {
   paginationContainer.innerHTML = '';
+  if (totalPages <= 1) return;
 
-  // Jika tidak ada halaman
-  if (totalPages <= 1) {
-    return;
-  }
+  const paginationWrapper = document.createElement("div");
+  paginationWrapper.className = "flex flex-col items-center gap-2";
 
-  // Tombol Prev
-  const prevButton = document.createElement('button');
-  prevButton.className = \`pagination-btn \${currentPage === 1 ? 'disabled' : ''}\`;
-  prevButton.innerHTML = "<i class='fas fa-chevron-left'></i>";
-  prevButton.disabled = currentPage === 1;
-  prevButton.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderProxyList();
-    }
-  });
-  paginationContainer.appendChild(prevButton);
+  const controls = document.createElement("div");
+  controls.className = "flex items-center gap-4";
 
-  // Menentukan jumlah tombol yang akan ditampilkan
-  const buttonCount = window.innerWidth < 640 ? 3 : 5;
-  let startPage = Math.max(1, currentPage - Math.floor(buttonCount / 2));
-  let endPage = Math.min(totalPages, startPage + buttonCount - 1);
+  // Prev Arrow
+  const prevBtn = document.createElement("button");
+  prevBtn.className = \`pagination-btn \${currentPage === 1 ? 'disabled' : ''}\`;
+  prevBtn.innerHTML = "<i class='fas fa-chevron-left'></i>";
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; renderProxyList(); } };
+  controls.appendChild(prevBtn);
 
-  // Menyesuaikan startPage jika tidak cukup ruang di akhir
-  if (endPage - startPage + 1 < buttonCount) {
-    startPage = Math.max(1, endPage - buttonCount + 1);
-  }
+  // Page Info
+  const pageInfo = document.createElement("span");
+  pageInfo.className = "text-gray-400 text-sm";
+  pageInfo.textContent = \`\${currentPage}/\${totalPages}\`;
+  controls.appendChild(pageInfo);
 
-  // Tombol 1 jika diperlukan
-  if (startPage > 1) {
-    const firstButton = document.createElement('button');
-    firstButton.className = 'pagination-btn';
-    firstButton.textContent = '1';
-    firstButton.addEventListener("click", () => {
-      currentPage = 1;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(firstButton);
+  // Next Arrow
+  const nextBtn = document.createElement("button");
+  nextBtn.className = \`pagination-btn \${currentPage === totalPages ? 'disabled' : ''}\`;
+  nextBtn.innerHTML = "<i class='fas fa-chevron-right'></i>";
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; renderProxyList(); } };
+  controls.appendChild(nextBtn);
 
-    // Tombol '...' jika diperlukan
-    if (startPage > 2) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'px-1 text-gray-400';
-      ellipsis.textContent = '...';
-      paginationContainer.appendChild(ellipsis);
-    }
-  }
+  paginationWrapper.appendChild(controls);
 
-  // Tombol halaman tengah
-  for (let page = startPage; page <= endPage; page++) {
-    const pageButton = document.createElement('button');
-    pageButton.className = \`pagination-btn \${page === currentPage ? 'active' : ''}\`;
-    pageButton.textContent = page;
-    pageButton.addEventListener("click", () => {
-      currentPage = page;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(pageButton);
-  }
+  const rangeInfo = document.createElement("div");
+  rangeInfo.className = "text-gray-600 text-xs";
+  const start = (currentPage - 1) * 10 + 1;
+  const end = Math.min(currentPage * 10, filteredProxyList.length);
+  rangeInfo.textContent = \`\${start}-\${end} dari \${filteredProxyList.length}\`;
+  paginationWrapper.appendChild(rangeInfo);
 
-  // Tombol '...' jika diperlukan di akhir
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'px-1 text-gray-400';
-      ellipsis.textContent = '...';
-      paginationContainer.appendChild(ellipsis);
-    }
-
-    // Tombol halaman terakhir
-    const lastButton = document.createElement('button');
-    lastButton.className = 'pagination-btn';
-    lastButton.textContent = totalPages.toString();
-    lastButton.addEventListener("click", () => {
-      currentPage = totalPages;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(lastButton);
-  }
-
-  // Tombol Next
-  const nextButton = document.createElement('button');
-  nextButton.className = \`pagination-btn \${currentPage === totalPages ? 'disabled' : ''}\`;
-  nextButton.innerHTML = "<i class='fas fa-chevron-right'></i>";
-  nextButton.disabled = currentPage === totalPages;
-  nextButton.addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderProxyList();
-    }
-  });
-  paginationContainer.appendChild(nextButton);
+  paginationContainer.appendChild(paginationWrapper);
 }
 
 async function selectProxy(proxyIndex) {
@@ -3315,7 +3320,7 @@ async function selectProxy(proxyIndex) {
   // Format path untuk berbagai protokol
   const proxyDetails = selectedProxy.country + " - " + selectedProxy.provider;
   const proxyPath = "/Free-VPN-CF-Geo-Project/{ip}={port}".replace("{ip}", selectedProxy.ip).replace("{port}", selectedProxy.port);
-  
+
   // Isi nilai path ke elemen input
   document.getElementById('vmess-path').value = proxyPath;
   document.getElementById('vless-path').value = proxyPath;
@@ -3382,14 +3387,14 @@ function checkProxyStatus(proxy) {
     const statusDead = document.getElementById('proxy-status-dead');
     const statusUnknown = document.getElementById('proxy-status-unknown');
     const latencyElement = document.getElementById('proxy-latency');
-    
+
     // Show status container and loading state
     statusContainer.classList.remove('hidden');
     statusLoading.classList.remove('hidden');
     statusActive.classList.add('hidden');
     statusDead.classList.add('hidden');
     statusUnknown.classList.add('hidden');
-    
+
     fetch(statusURL)
         .then(response => response.json())
         .then(data => {
@@ -3495,7 +3500,7 @@ function loadProxyList(url) {
 document.addEventListener("DOMContentLoaded", () => {
   const currentYearElements = document.querySelectorAll('#current-year');
   const currentYear = new Date().getFullYear();
-  
+
   currentYearElements.forEach(element => {
     element.textContent = currentYear;
   });
@@ -3548,7 +3553,7 @@ function safeBase64Encode(input) {
   try {
     // If input is an object, stringify it; otherwise, convert to string
     const stringifiedInput = typeof input === "object" ? JSON.stringify(input) : String(input);
-    
+
     // Perform the Base64 encoding
     return window.btoa(stringifiedInput);
   } catch (error) {
@@ -3600,7 +3605,7 @@ async function copyToClipboard(text) {
       document.body.removeChild(textArea);
       return successful;
     }
-  
+
   } catch (_0x2d38c7) {
     console.error("Failed to copy text: ", _0x2d38c7);
     return false;
@@ -3618,7 +3623,7 @@ function showToast(message, type = "info", duration = 3000) {
     toastContainer.style.zIndex = "9999";
     document.body.appendChild(toastContainer);
   }
-  
+
   const toastElement = document.createElement("div");
   toastElement.style.minWidth = "250px";
   toastElement.style.margin = "10px 0";
@@ -3629,7 +3634,7 @@ function showToast(message, type = "info", duration = 3000) {
   toastElement.style.alignItems = "center";
   toastElement.style.justifyContent = "space-between";
   toastElement.style.color = "white";
-  
+
   let bgColor;
   let iconHTML;
   switch (type) {
@@ -3663,7 +3668,7 @@ function showToast(message, type = "info", duration = 3000) {
   });
 
   toastContainer.appendChild(toastElement);
-  
+
   if (!document.getElementById("toast-styles")) {
     const styleElement = document.createElement('style');
     styleElement.id = 'toast-styles';
