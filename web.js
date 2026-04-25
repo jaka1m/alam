@@ -2849,15 +2849,15 @@ serverDomainElements.forEach(element => {
         tlsResult = "vmess://" + btoa(JSON.stringify(tlsObj));
         ntlsResult = "vmess://" + btoa(JSON.stringify(ntlsObj));
       } else if (formPrefix === "vless") {
-        tlsResult = `vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}`;
-        ntlsResult = `vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}`;
+        tlsResult = \`vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       } else if (formPrefix === "trojan") {
-        tlsResult = `trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}`;
-        ntlsResult = `trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}`;
+        tlsResult = \`trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       } else if (formPrefix === 'ss') {
         const encodedPassword = btoa("none:" + password);
-        tlsResult = `ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}`;
-        ntlsResult = `ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}`;
+        tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       }
 
       document.getElementById('connection-tls').textContent = tlsResult;
