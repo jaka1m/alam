@@ -10,11 +10,11 @@ export default {
         if (proxyMatch) {
             const targetHost = proxyMatch[1];
             const targetPort = parseInt(proxyMatch[2]);
-            
+
             if (isPrivateIP(targetHost)) {
                 return new Response('Forbidden: Private IP', { status: 403 });
             }
-            
+
             return await handleWebSocket(request, targetHost, targetPort);
         }
     }
@@ -56,13 +56,13 @@ async function handleWebSocket(request, targetHost, targetPort) {
                         server.close();
                     }
                 });
-                
+
                 server.addEventListener('close', async () => {
                     try {
                         await writer.close();
                     } catch (err) {}
                 });
-                
+
                 server.addEventListener('error', () => {
                     try {
                         writer.abort();
@@ -112,31 +112,31 @@ const htmlContent = `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEO-PROJECT </title>
-    
+
     <!-- Favicon -->
     <link rel="icon" href="https://raw.githubusercontent.com/jaka2m/project/refs/heads/main/social/bot.png">
-    
+
     <!-- Meta tags -->
     <meta property="og:image:secure_url" content="https://raw.githubusercontent.com/akulelaki696/bg/refs/heads/main/20250106_010158.jpg"/>
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)"/>
     <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+
     <!-- External CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- External JavaScript -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <style>
-      
+
 :root {
   /* Color variables */
   --primary: #6a11cb;
@@ -2034,13 +2034,13 @@ body::before {
             <div class="tech-detail tech-detail-1"></div>
             <div class="tech-detail tech-detail-2"></div>
             <div class="tech-detail tech-detail-3"></div>
-            
+
             <div class="title-container">
                 <h1 class="title">GEO - PROJECT</h1>
                 <p class="subtitle">Advanced Link Generator</p>
             </div>
 
-            
+
             <div class="p-1">
     <!-- Proxy List Section -->
     <div id="proxy-list-section">
@@ -2068,20 +2068,20 @@ body::before {
 
                     <div id="custom-url-input" class="mb-5 hidden">
     <div class="flex gap-2"> <!-- tambah gap biar ada jarak -->
-        <input type="text" id="proxy-url" class="w-2/3 px-4 py-2.5 glass-input rounded-lg text-sm" 
-            placeholder="Enter custom proxy list URL" 
+        <input type="text" id="proxy-url" class="w-2/3 px-4 py-2.5 glass-input rounded-lg text-sm"
+            placeholder="Enter custom proxy list URL"
             value="https://raw.githubusercontent.com/paoandest/botak/refs/heads/main/cek/proxyList.txt">
         <button id="load-custom-url" class="w-100 primary-btn py-1.5 px-4 rounded-md flex items-center justify-center text-xs">
             Load
         </button>
     </div>
 </div>
-                    
+
                     <div id="loading-indicator" class="text-center py-10 hidden">
                         <div class="loading-spinner mx-auto mb-4"></div>
                         <p class="text-indigo-300 text-sm">Loading proxy list...</p>
                     </div>
-                    
+
                     <!-- Search input -->
                     <div class="mb-4">
                         <div class="relative">
@@ -2091,12 +2091,12 @@ body::before {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Mobile-friendly proxy list -->
                     <div id="proxy-list-container" class="mt-4">
                         <!-- Proxy cards will be populated here -->
                     </div>
-                    
+
                     <!-- Pagination controls -->
                     <div id="pagination-container" class="flex justify-center items-center mt-6 space-x-2">
                         <!-- Pagination buttons will be added here -->
@@ -2106,13 +2106,13 @@ body::before {
                     <div id="proxy-count-info" class="text-center mt-3 text-sm text-gray-400">
                         <!-- Proxy count will be shown here -->
                     </div>
-                    
+
                     <div id="no-proxies-message" class="text-center py-10 hidden">
                         <i class="fas fa-exclamation-circle text-rose-400 text-4xl mb-3"></i>
                         <p class="text-gray-300 text-sm">No proxies found. Please refresh or try a different URL.</p>
                     </div>
                 </div>
-                
+
                 <!-- Account Creation Section -->
                 <div id="account-creation-section" class="mt-6 hidden">
                     <div class="pt-4">
@@ -2126,15 +2126,15 @@ body::before {
                                 <i class="fas fa-arrow-left mr-2"></i> Back to List
                             </button>
                         </div>
-                        
+
                         <div class="card p-5 mb-6 overflow-hidden relative">
                             <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-indigo-500/5 to-transparent rounded-bl-full pointer-events-none"></div>
-                            
+
                             <h3 class="text-base font-medium text-indigo-400 mb-4 flex items-center">
                                 <i class="fas fa-server mr-2"></i>
                                 Selected Proxy
                             </h3>
-                            
+
                             <div class="grid grid-cols-2 gap-3 mb-4">
                                 <div class="flex items-center space-x-2 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30">
                                     <i class="fas fa-building text-indigo-400/70 w-5 text-center"></i>
@@ -2165,7 +2165,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div id="proxy-status-container" class="hidden">
                                 <div id="proxy-status-active" class="hidden rounded-lg p-3 bg-gradient-to-r from-emerald-900/20 to-emerald-800/10 border border-emerald-500/20">
                                     <div class="flex items-center">
@@ -2178,7 +2178,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-dead" class="hidden rounded-lg p-3 bg-gradient-to-r from-rose-900/20 to-rose-800/10 border border-rose-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center mr-3 border border-rose-500/30">
@@ -2190,7 +2190,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-unknown" class="hidden rounded-lg p-3 bg-gradient-to-r from-amber-900/20 to-amber-800/10 border border-amber-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mr-3 border border-amber-500/30">
@@ -2202,7 +2202,7 @@ body::before {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div id="proxy-status-loading" class="rounded-lg p-3 bg-gradient-to-r from-indigo-900/20 to-indigo-800/10 border border-indigo-500/20">
                                     <div class="flex items-center">
                                         <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center mr-3 border border-indigo-500/30">
@@ -2216,7 +2216,7 @@ body::before {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Tabs -->
                         <div class="flex border-b border-gray-700 mb-6 overflow-x-auto space-x-1 sm:space-x-0">
                             <button class="tab-btn active py-3 px-4 font-medium text-sm focus:outline-none" data-target="vmess-form">
@@ -2232,7 +2232,7 @@ body::before {
                                 <i class="fas fa-mask mr-2"></i>SS
                             </button>
                         </div>
-                        
+
                         <!-- VMess Form -->
                     <div id="vmess-form" class="protocol-form">
                         <form id="vmess-account-form" class="space-y-5">
@@ -2240,17 +2240,17 @@ body::before {
                                 <label for="vmess-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
                                 <input type="text" id="vmess-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                           <label for="vmess-uuid" class="block text-sm font-medium text-gray-300 mb-2">UUID</label>
                         <input type="text" id="vmess-uuid" name="uuid" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" value="f282b878-8711-45a1-8c69-5564172123c1" required readonly>
                           </div>
-                            
+
                             <div>
                                 <label for="vmess-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="vmess-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="vmess-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
                                 <select id="vmess-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2259,14 +2259,14 @@ body::before {
                                 </select>
                                 <input type="hidden" id="vmess-encryption" name="encryption" value="zero">
                             </div>
-                            
+
                             <div>
                                 <label for="vmess-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="vmess-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="vmess-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="vmess-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2282,7 +2282,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                          <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                         <i class="fas fa-plus-circle mr-1 text-sm"></i> Create VMess Account
@@ -2290,7 +2290,7 @@ body::before {
                        </div>
                    </form>
                     </div>
-                    
+
                     <!-- VLESS Form -->
                     <div id="vless-form" class="protocol-form hidden">
                         <form id="vless-account-form" class="space-y-5">
@@ -2298,7 +2298,7 @@ body::before {
                                 <label for="vless-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
                                 <input type="text" id="vless-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-uuid" class="block text-sm font-medium text-gray-300 mb-2">UUID</label>
                                 <div class="flex">
@@ -2308,12 +2308,12 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="vless-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
                                 <select id="vless-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2322,14 +2322,14 @@ body::before {
                                 </select>
                                 <input type="hidden" id="vless-encryption" name="encryption" value="none">
                             </div>
-                            
+
                             <div>
                                 <label for="vless-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="vless-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="vless-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="vless-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2345,7 +2345,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                            <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                           <i class="fas fa-plus-circle mr-1 text-sm"></i> Create VLESS Account
@@ -2353,7 +2353,7 @@ body::before {
                             </div>
                         </form>
                     </div>
-                    
+
                     <!-- Trojan Form -->
                     <div id="trojan-form" class="protocol-form hidden">
                         <form id="trojan-account-form" class="space-y-5">
@@ -2361,7 +2361,7 @@ body::before {
                                 <label for="trojan-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
                                 <input type="text" id="trojan-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                                 <div class="flex">
@@ -2371,12 +2371,12 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="trojan-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
                                 <select id="trojan-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2385,14 +2385,14 @@ body::before {
                                 </select>
                                 <input type="hidden" id="trojan-sni" name="sni" value="vm.gpj.web.id">
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="trojan-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="trojan-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
                                 <select id="trojan-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2408,7 +2408,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                             <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                            <i class="fas fa-plus-circle mr-1 text-sm"></i> Create Trojan Account
@@ -2416,7 +2416,7 @@ body::before {
                          </div>
                          </form>
                     </div>
-                    
+
                     <!-- Shadowsocks Form -->
                     <div id="ss-form" class="protocol-form hidden">
                         <form id="ss-account-form" class="space-y-5">
@@ -2424,7 +2424,7 @@ body::before {
                                 <label for="ss-name" class="block text-sm font-medium text-gray-300 mb-2">Account Name</label>
                                 <input type="text" id="ss-name" name="name" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-password" class="block text-sm font-medium text-gray-300 mb-2">Password</label>
                                 <div class="flex">
@@ -2434,12 +2434,12 @@ body::before {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-path" class="block text-sm font-medium text-gray-300 mb-2">Path</label>
                                 <input type="text" id="ss-path" name="path" class="w-full px-4 py-2.5 glass-input rounded-lg text-xs" readonly>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-security" class="block text-sm font-medium text-gray-300 mb-2">TLS</label>
                                 <select id="ss-security" name="security" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
@@ -2447,17 +2447,17 @@ body::before {
                                     <option value="none">None</option>
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-server-domain" class="block text-sm font-medium text-gray-300 mb-2">Server Domain</label>
                                 <select id="ss-server-domain" name="server-domain" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label for="ss-bug" class="block text-sm font-medium text-gray-300 mb-2">Custom Bug <span class="text-xs text-gray-500">(opsional)</span></label>
-                                <select id="ss-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">                                	
+                                <select id="ss-bug" name="bug" class="w-full px-4 py-2.5 glass-select rounded-lg text-sm">
     <!-- Options will be populated dynamically -->
                              </select>
                                 <div id="ss-manual-bug-container" class="wildcard-container">
@@ -2470,7 +2470,7 @@ body::before {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-2">
                          <button type="submit" class="w-full primary-btn py-1.5 px-2 rounded-md flex items-center justify-center text-xs">
                            <i class="fas fa-plus-circle mr-1 text-sm"></i> Create Shadowsocks Account
@@ -2480,7 +2480,7 @@ body::before {
                     </div>
                 </div>
             </div>
-            
+
             <!-- Result Section -->
             <div id="result-section" class="mt-6 hidden">
                 <div class="pt-4">
@@ -2494,7 +2494,7 @@ body::before {
                             <i class="fas fa-arrow-left mr-2"></i> Back
                         </button>
                     </div>
-                    
+
                         <div class="card p-5 mb-5">
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="text-base font-medium text-indigo-400">TLS Connection URL</h3>
@@ -2503,7 +2503,7 @@ body::before {
                                 </button>
                             </div>
                             <div id="connection-tls" class="text-xs glass-code p-4 rounded-lg break-all font-mono mb-4"></div>
-                            
+
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="text-base font-medium text-indigo-400">NTLS Connection URL</h3>
                                 <button id="copy-ntls" class="flex items-center text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
@@ -2512,7 +2512,7 @@ body::before {
                             </div>
                             <div id="connection-ntls" class="text-xs glass-code p-4 rounded-lg break-all font-mono"></div>
                         </div>
-                        
+
                         <div class="card p-5">
                             <div class="flex justify-between items-center mb-3">
                                 <h3 class="text-base font-medium text-indigo-400">QR Code</h3>
@@ -2524,7 +2524,7 @@ body::before {
                                 <div id="qrcode" class="qrcode-container"></div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                             <button id="create-new" class="flex-1 primary-btn py-3 px-4 rounded-lg flex items-center justify-center text-sm">
                                 <i class="fas fa-plus-circle mr-2"></i> Create Another
@@ -2548,7 +2548,7 @@ body::before {
        <div class="circuit-dot circuit-dot-2"></div>
        <div class="circuit-dot circuit-dot-3"></div>
        <div class="circuit-dot circuit-dot-4"></div>
-       
+
        <div class="footer-logo">GEO-PROJECT</div>
        <div class="footer-powered">POWERED BY SECURE TECHNOLOGY</div>
    </footer>
@@ -2556,7 +2556,7 @@ body::before {
     <div id="donation-button" class="donate-btn">
         <i class="fas fa-hand-holding-heart"></i>
     </div>
-    
+
     <!-- Donation Modal -->
     <div id="donation-modal" class="donation-modal">
         <div class="donation-backdrop" id="donation-backdrop"></div>
@@ -2565,11 +2565,11 @@ body::before {
             <div class="donation-border">
                 <div class="donation-border-animation"></div>
             </div>
-            
+
             <div class="donation-body">
-                
+
                 <h3 class="donation-title">Support Geo-Project</h3>
-                
+
                 <div class="qris-container">
                     <!-- Inner animated border -->
                     <div class="qris-border">
@@ -2579,7 +2579,7 @@ body::before {
                         <img src="https://raw.githubusercontent.com/jaka2m/vpn-cf/refs/heads/master/web/qris.png" alt="Donation QR Code" class="qris-image">
                     </div>
                 </div>
-                
+
                 <p class="donation-small-text">Scan this QR code with your payment app to donate</p>
             </div>
         </div>
@@ -2690,8 +2690,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (searchQuery === '') {
     filteredProxyList = [...proxyList];  // If the input is empty, reset the filtered list
   } else {
-    filteredProxyList = proxyList.filter(proxy => 
-      proxy.provider.toLowerCase().includes(searchQuery) || 
+    filteredProxyList = proxyList.filter(proxy =>
+      proxy.provider.toLowerCase().includes(searchQuery) ||
       proxy.country.toLowerCase().includes(searchQuery)
     );  // Filter the proxy list based on the provider or country
   }
@@ -2711,7 +2711,7 @@ tabButtons.forEach(button => {
     tabButtons.forEach(tab => {
       tab.classList.remove("active");
     });
-    
+
     // Add 'active' class to the clicked tab button
     button.classList.add("active");
 
@@ -2819,37 +2819,47 @@ serverDomainElements.forEach(element => {
       }
       let tlsResult = '';
       let ntlsResult = '';
-      
-      const name = encodeURIComponent(formData.get("name"));
+
+      const rawName = formData.get("name").replace(/\s*\[.*-(TLS|NTLS)\]$/i, '');
+      const protocolNames = {
+        'vmess': 'VMess',
+        'vless': 'VLESS',
+        'trojan': 'Trojan',
+        'ss': 'SS'
+      };
+      const protocolName = protocolNames[formPrefix] || formPrefix;
+      const tlsName = rawName + ' [' + protocolName + '-TLS]';
+      const ntlsName = rawName + ' [' + protocolName + '-NTLS]';
+
       const uuid = formData.get("uuid");
       const path = encodeURIComponent(formData.get("path"));
       const password = formData.get("password");
 
       if (formPrefix === 'vmess') {
         const tlsObj = {
-          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 443, 'id': formData.get('uuid'),
+          'v': '2', 'ps': tlsName, 'add': domainForWildcard, 'port': 443, 'id': formData.get('uuid'),
           'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
           'tls': 'tls', 'sni': fullDomain, 'scy': "zero"
         };
         const ntlsObj = {
-          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 80, 'id': formData.get('uuid'),
+          'v': '2', 'ps': ntlsName, 'add': domainForWildcard, 'port': 80, 'id': formData.get('uuid'),
           'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
           'tls': '', 'sni': '', 'scy': "zero"
         };
         tlsResult = "vmess://" + btoa(JSON.stringify(tlsObj));
         ntlsResult = "vmess://" + btoa(JSON.stringify(ntlsObj));
       } else if (formPrefix === "vless") {
-        tlsResult = \`vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = \`vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       } else if (formPrefix === "trojan") {
-        tlsResult = \`trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = \`trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       } else if (formPrefix === 'ss') {
         const encodedPassword = btoa("none:" + password);
-        tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${encodeURIComponent(tlsName)}\`;
+        ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${encodeURIComponent(ntlsName)}\`;
       }
-      
+
       document.getElementById('connection-tls').textContent = tlsResult;
       document.getElementById('connection-ntls').textContent = ntlsResult;
       generateQRCode(tlsResult);
@@ -2932,7 +2942,7 @@ function generateQRCodeLastResort(data, qrCodeContainer) {
   try {
     const encodedData = encodeURIComponent(data);
     const qrCodeUrl = \`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=\${encodedData}\`;
-    
+
     const img = document.createElement('img');
     img.src = qrCodeUrl;
     img.alt = "QR Code";
@@ -2956,7 +2966,7 @@ function downloadQRCode() {
   const canvas = qrCodeContainer.querySelector("canvas");
   const img = qrCodeContainer.querySelector("img");
   const svg = qrCodeContainer.querySelector("svg");
-  
+
   let qrCodeDataUrl = null;
 
   // If QR code is rendered as a canvas
@@ -2966,11 +2976,11 @@ function downloadQRCode() {
     } catch (error) {
       console.error("Canvas to data URL error:", error);
     }
-  } 
+  }
   // If QR code is rendered as an image
   else if (img) {
     qrCodeDataUrl = img.src;
-  } 
+  }
   // If QR code is rendered as an SVG
   else if (svg) {
     try {
@@ -3011,7 +3021,7 @@ function displayFallbackProxyList() {
     'country': 'ID',
     'provider': "PT Pusat Media Indonesia"
   }];
-  
+
   // Update the filtered list
   filteredProxyList = [...proxyList];
   renderProxyList();
@@ -3315,7 +3325,7 @@ async function selectProxy(proxyIndex) {
   // Format path untuk berbagai protokol
   const proxyDetails = selectedProxy.country + " - " + selectedProxy.provider;
   const proxyPath = "/Free-VPN-CF-Geo-Project/{ip}={port}".replace("{ip}", selectedProxy.ip).replace("{port}", selectedProxy.port);
-  
+
   // Isi nilai path ke elemen input
   document.getElementById('vmess-path').value = proxyPath;
   document.getElementById('vless-path').value = proxyPath;
@@ -3382,14 +3392,14 @@ function checkProxyStatus(proxy) {
     const statusDead = document.getElementById('proxy-status-dead');
     const statusUnknown = document.getElementById('proxy-status-unknown');
     const latencyElement = document.getElementById('proxy-latency');
-    
+
     // Show status container and loading state
     statusContainer.classList.remove('hidden');
     statusLoading.classList.remove('hidden');
     statusActive.classList.add('hidden');
     statusDead.classList.add('hidden');
     statusUnknown.classList.add('hidden');
-    
+
     fetch(statusURL)
         .then(response => response.json())
         .then(data => {
@@ -3495,7 +3505,7 @@ function loadProxyList(url) {
 document.addEventListener("DOMContentLoaded", () => {
   const currentYearElements = document.querySelectorAll('#current-year');
   const currentYear = new Date().getFullYear();
-  
+
   currentYearElements.forEach(element => {
     element.textContent = currentYear;
   });
@@ -3548,7 +3558,7 @@ function safeBase64Encode(input) {
   try {
     // If input is an object, stringify it; otherwise, convert to string
     const stringifiedInput = typeof input === "object" ? JSON.stringify(input) : String(input);
-    
+
     // Perform the Base64 encoding
     return window.btoa(stringifiedInput);
   } catch (error) {
@@ -3600,7 +3610,7 @@ async function copyToClipboard(text) {
       document.body.removeChild(textArea);
       return successful;
     }
-  
+
   } catch (_0x2d38c7) {
     console.error("Failed to copy text: ", _0x2d38c7);
     return false;
@@ -3618,7 +3628,7 @@ function showToast(message, type = "info", duration = 3000) {
     toastContainer.style.zIndex = "9999";
     document.body.appendChild(toastContainer);
   }
-  
+
   const toastElement = document.createElement("div");
   toastElement.style.minWidth = "250px";
   toastElement.style.margin = "10px 0";
@@ -3629,7 +3639,7 @@ function showToast(message, type = "info", duration = 3000) {
   toastElement.style.alignItems = "center";
   toastElement.style.justifyContent = "space-between";
   toastElement.style.color = "white";
-  
+
   let bgColor;
   let iconHTML;
   switch (type) {
@@ -3663,7 +3673,7 @@ function showToast(message, type = "info", duration = 3000) {
   });
 
   toastContainer.appendChild(toastElement);
-  
+
   if (!document.getElementById("toast-styles")) {
     const styleElement = document.createElement('style');
     styleElement.id = 'toast-styles';
