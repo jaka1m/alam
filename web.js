@@ -2828,8 +2828,8 @@ serverDomainElements.forEach(element => {
         'ss': 'SS'
       };
       const protocolName = protocolNames[formPrefix] || formPrefix;
-      const tlsName = `\\${rawName} [\\${protocolName}-TLS]`;
-      const ntlsName = `\\${rawName} [\\${protocolName}-NTLS]`;
+      const tlsName = rawName + ' [' + protocolName + '-TLS]';
+      const ntlsName = rawName + ' [' + protocolName + '-NTLS]';
 
       const uuid = formData.get("uuid");
       const path = encodeURIComponent(formData.get("path"));
