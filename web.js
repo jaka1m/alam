@@ -139,30 +139,31 @@ const htmlContent = `<!DOCTYPE html>
 
 :root {
   /* Color variables */
-  --primary: #6a11cb;
-  --primary-dark: #4f46e5;
-  --primary-light: #a0a0ff;
+  --primary: #00bcd4; /* Teal for buttons */
+  --primary-dark: #0097a7;
+  --primary-light: #b2ebf2;
   --secondary: #2575fc;
   --secondary-dark: #1e40af;
   --accent: #ff6b6b;
-  --dark: #0f0c29;
-  --dark-light: #302b63;
+  --dark: #0d1117; /* Darker background */
+  --dark-light: #161b22;
   --light: #ffffff;
-  --gray: #64748b;
-  --gray-light: #a0a0ff;
-  --gray-dark: #334155;
-  --primary-color: #6a11cb;
-  --secondary-color: #2575fc;
-  --accent-color: #ff6b6b;
-  --dark-bg: #0f0c29;
-  --dark-bg-gradient-1: #302b63;
-  --dark-bg-gradient-2: #24243e;
-  --card-bg: rgba(15, 14, 32, 0.8);
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0ff;
-  --text-muted: rgba(255, 255, 255, 0.5);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --success-color: #38ef7d;
+  --gray: #8b949e;
+  --gray-light: #c9d1d9;
+  --gray-dark: #30363d;
+  --primary-color: #00bcd4;
+  --secondary-color: #008ba3;
+  --accent-color: #f85149;
+  --dark-bg: #0d1117;
+  --dark-bg-gradient-1: #0d1117;
+  --dark-bg-gradient-2: #161b22;
+  --card-bg: #161b22;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --border-color: #30363d;
+  --success-color: #3fb950;
+  --error-color: #f85149;
 
   /* Common UI elements */
   --border-radius-sm: 8px;
@@ -190,25 +191,12 @@ const htmlContent = `<!DOCTYPE html>
 }
 
 body {
-  font-family: "Rajdhani", sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
-  background: linear-gradient(135deg, var(--dark-bg), var(--dark-bg-gradient-1), var(--dark-bg-gradient-2));
-  background-attachment: fixed;
+  background: var(--dark-bg);
   min-height: 100vh;
   position: relative;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 30%, rgba(106, 17, 203, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(37, 117, 252, 0.15) 0%, transparent 40%);
-  z-index: -1;
 }
 
 a {
@@ -648,7 +636,7 @@ body::before {
 
 .container {
   width: 100%;
-  max-width: 480px;
+  max-width: 1000px;
   padding: 0 0.75rem;
   margin: 0 auto 1rem auto;
 }
@@ -708,7 +696,7 @@ body::before {
 .title {
   font-family: "Orbitron", sans-serif;
   font-weight: 700;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   letter-spacing: 1px;
   margin: 0;
   background: linear-gradient(90deg, var(--primary), var(--secondary));
@@ -1023,19 +1011,79 @@ body::before {
 
 /* Card styles */
 .proxy-card {
-  background: rgba(30, 41, 59, 0.5);
-  border-radius: 12px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid rgba(106, 17, 203, 0.1);
-  transition: all 0.3s ease;
+  background: #161b22;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border: 1px solid #30363d;
+  transition: all 0.2s ease;
 }
 
 .proxy-card:hover {
-  background: rgba(51, 65, 85, 0.5);
-  border-color: rgba(106, 17, 203, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-color: #8b949e;
+}
+
+.status-badge-live {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.status-badge-live::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: #3fb950;
+  border-radius: 50%;
+}
+
+.status-badge-off {
+  background: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.status-badge-off::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: #f85149;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6px;
+  color: white;
+  content: "×";
+}
+
+.pilih-btn {
+  background: #00bcd4;
+  color: #0d1117;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.pilih-btn:hover {
+  opacity: 0.9;
 }
 
 /* Pagination styles */
@@ -1615,24 +1663,24 @@ body::before {
   text-align: center;
 }
 .text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 0.8rem;
+  line-height: 1.2rem;
 }
 .text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
+  font-size: 0.7rem;
+  line-height: 0.9rem;
 }
 .text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 .text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 1.1rem;
+  line-height: 1.5rem;
 }
 .text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 .text-4xl {
   font-size: 2.25rem;
@@ -1859,7 +1907,7 @@ body::before {
 /* Footer styles */
 .footer {
   width: 100%;
-  max-width: 480px;
+  max-width: 1000px;
   background: rgba(15, 14, 32, 0.8);
   border-radius: 12px;
   padding: 1.2rem;
@@ -2029,7 +2077,7 @@ body::before {
     </style>
 </head>
 <body>
-    <div class="container" style="width: 100%; max-width: 480px; padding: 0 0.75rem; margin-bottom: 1rem;">
+    <div class="container" style="width: 100%; max-width: 1000px; padding: 0 0.75rem; margin-bottom: 1rem;">
         <div class="card">
             <div class="tech-detail tech-detail-1"></div>
             <div class="tech-detail tech-detail-2"></div>
@@ -2550,22 +2598,22 @@ body::before {
         </div>
     </div>
 
-   <footer class="footer">
-       <div class="circuit-line circuit-line-1"></div>
-       <div class="circuit-line circuit-line-2"></div>
-       <div class="circuit-line circuit-line-3"></div>
-       <div class="circuit-line circuit-line-4"></div>
-       <div class="circuit-dot circuit-dot-1"></div>
-       <div class="circuit-dot circuit-dot-2"></div>
-       <div class="circuit-dot circuit-dot-3"></div>
-       <div class="circuit-dot circuit-dot-4"></div>
-
-       <div class="footer-logo">GEO-PROJECT</div>
-       <div class="footer-powered">POWERED BY SECURE TECHNOLOGY</div>
+   <footer class="mt-8 mb-20 flex flex-col items-center gap-4">
+       <div class="flex items-center gap-8 text-gray-400 text-xl">
+           <a href="#"><i class="fab fa-telegram"></i></a>
+           <a href="#"><i class="fas fa-robot"></i></a>
+           <a href="#"><i class="fas fa-users"></i></a>
+       </div>
+       <div class="text-center">
+           <div class="text-gray-500 text-xs">
+               &copy; <span id="current-year"></span> <span class="text-pink-500 font-bold">AFRCloud-NET</span>. All rights reserved.
+           </div>
+           <div class="text-gray-600 text-xs mt-1">Engineered for Privacy & Speed</div>
+       </div>
    </footer>
 
-    <div id="donation-button" class="donate-btn">
-        <i class="fas fa-hand-holding-heart"></i>
+    <div id="donation-button" class="fixed bottom-6 right-6 w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer hover:scale-105 transition-transform z-[1000]">
+        <i class="fas fa-hand-holding-heart text-2xl"></i>
     </div>
 
     <!-- Donation Modal -->
@@ -3120,76 +3168,62 @@ function renderProxyList() {
   proxiesToDisplay.forEach((proxy, index) => {
     const proxyIndex = startIndex + index;
 
-    // Membuat card proxy
+    // Membuat card proxy sesuai gambar
     const proxyCard = document.createElement("div");
-    proxyCard.className = "proxy-card group";
+    proxyCard.className = "proxy-card";
 
-    const header = document.createElement("div");
-    header.className = "flex justify-between items-center";
-    header.style.display = 'flex';
-    header.style.flexDirection = 'row';
+    // Layout: Flex Row
+    const flexRow = document.createElement("div");
+    flexRow.className = "flex items-center justify-between";
 
-    const infoContainer = document.createElement("div");
-    infoContainer.className = "flex-1 min-w-0 pr-2";
+    // Left side: Icon + Info
+    const leftSide = document.createElement("div");
+    leftSide.className = "flex items-start gap-3 flex-1 min-w-0";
 
-    const providerContainer = document.createElement('div');
-    providerContainer.className = "flex-items-center";
-    providerContainer.style.display = "flex";
-    providerContainer.style.alignItems = 'center';
-    providerContainer.style.width = "100%";
-    providerContainer.style.position = "relative";
+    const starIcon = document.createElement("i");
+    starIcon.className = "far fa-star text-gray-500 mt-1";
+    leftSide.appendChild(starIcon);
 
-    // Nama provider
+    const info = document.createElement("div");
+    info.className = "min-w-0";
+
     const providerName = document.createElement("div");
-    providerName.className = "font-medium text-sm truncate group-hover:text-indigo-300 transition-colors";
-    providerName.style.maxWidth = "calc(100% - 20px)";
+    providerName.className = "text-sm font-bold text-gray-200 truncate";
     providerName.textContent = proxy.provider;
-    providerContainer.appendChild(providerName);
+    info.appendChild(providerName);
 
-    // Indikator status proxy
-    const statusIndicator = document.createElement("span");
-    statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-gray-500 ml-2 pulse-animation";
-    statusIndicator.style.flexShrink = '0';
-    statusIndicator.style.position = "relative";
-    statusIndicator.innerHTML = '';
-    statusIndicator.title = "Memeriksa...";
-    statusIndicator.id = "proxy-status-" + proxyIndex;
-    providerContainer.appendChild(statusIndicator);
+    const details = document.createElement("div");
+    details.className = "text-xs text-gray-500 mt-0.5 truncate";
+    details.textContent = \`\${proxy.country} | \${proxy.ip}:\${proxy.port}\`;
+    info.appendChild(details);
 
-    infoContainer.appendChild(providerContainer);
+    leftSide.appendChild(info);
 
-    // Detail proxy (negara, IP, port)
-    const proxyDetails = document.createElement("div");
-    proxyDetails.className = "text-xs text-gray-400 mt-1 truncate group-hover:text-gray-300 transition-colors";
-    proxyDetails.style.whiteSpace = 'nowrap';
-    proxyDetails.style.overflow = "hidden";
-    proxyDetails.style.textOverflow = "ellipsis";
-    proxyDetails.textContent = \`\${proxy.country} | \${proxy.ip}:\${proxy.port}\`;
-    infoContainer.appendChild(proxyDetails);
+    // Right side: Status + Pilih Button
+    const rightSide = document.createElement("div");
+    rightSide.className = "flex items-center gap-2 flex-shrink-0";
 
-    // Tombol buat akun
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = 'flex-shrink-0';
-    buttonContainer.style.flexShrink = '0';
+    // Status Badge
+    const statusBadge = document.createElement("div");
+    statusBadge.id = "proxy-status-" + proxyIndex;
+    statusBadge.className = "status-badge-live pulse-animation"; // Initial state
+    statusBadge.textContent = "WAIT";
+    rightSide.appendChild(statusBadge);
 
-    const createButton = document.createElement("button");
-    createButton.className = "create-account-btn primary-btn py-2 px-4 rounded-lg text-xs group-hover:scale-105 transition-transform";
-    createButton.style.whiteSpace = "nowrap";
-    createButton.style.minWidth = "60px";
-    createButton.setAttribute("data-index", proxyIndex);
-    createButton.innerHTML = "Create";
-    buttonContainer.appendChild(createButton);
+    // Pilih Button
+    const pilihBtn = document.createElement("button");
+    pilihBtn.className = "pilih-btn create-account-btn";
+    pilihBtn.textContent = "PILIH";
+    pilihBtn.setAttribute("data-index", proxyIndex);
+    rightSide.appendChild(pilihBtn);
 
-    // Menambahkan elemen header ke dalam card proxy
-    header.appendChild(infoContainer);
-    header.appendChild(buttonContainer);
-
-    // Menambahkan card proxy ke dalam container
-    proxyCard.appendChild(header);
+    flexRow.appendChild(leftSide);
+    flexRow.appendChild(rightSide);
+    proxyCard.appendChild(flexRow);
     proxyListContainer.appendChild(proxyCard);
 
     // Mengecek status proxy
-    checkProxyStatusInList(proxy, statusIndicator);
+    checkProxyStatusInList(proxy, statusBadge);
   });
 
   // Menambahkan event listener ke setiap tombol "Create"
@@ -3206,125 +3240,71 @@ function renderProxyList() {
   proxyCountInfo.textContent = \`Showing \${startIndex + 1}-\${endIndex} of \${filteredProxyList.length} proxies\`;
 }
 
-function checkProxyStatusInList(proxy, statusIndicator) {
+function checkProxyStatusInList(proxy, statusBadge) {
   const statusURL = \`https://cors.api-check.web.id/?url=https://api-check.web.id/check?ip=\${proxy.ip}:\${proxy.port}\`;
 
   fetch(statusURL)
     .then(response => response.json())
     .then(data => {
+      statusBadge.classList.remove("pulse-animation");
       if (data.status === "ACTIVE") {
-        statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-emerald-500 ml-2";
-        statusIndicator.innerHTML = '';
-        statusIndicator.title = "Aktif";
+        statusBadge.className = "status-badge-live";
+        statusBadge.textContent = "LIVE";
       } else {
-        statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-rose-500 ml-2";
-        statusIndicator.innerHTML = '';
-        statusIndicator.title = 'Mati';
+        statusBadge.className = "status-badge-off";
+        statusBadge.textContent = "OFF";
       }
     })
     .catch(error => {
-      statusIndicator.className = "inline-block w-3 h-3 rounded-full bg-amber-500 ml-2";
-      statusIndicator.innerHTML = '';
-      statusIndicator.title = "Tidak diketahui";
+      statusBadge.classList.remove("pulse-animation");
+      statusBadge.className = "status-badge-off";
+      statusBadge.textContent = "ERR";
       console.error("Fetch error:", error);
     });
 }
 
 function renderPagination(totalPages) {
   paginationContainer.innerHTML = '';
+  if (totalPages <= 1) return;
 
-  // Jika tidak ada halaman
-  if (totalPages <= 1) {
-    return;
-  }
+  const paginationWrapper = document.createElement("div");
+  paginationWrapper.className = "flex flex-col items-center gap-2";
 
-  // Tombol Prev
-  const prevButton = document.createElement('button');
-  prevButton.className = \`pagination-btn \${currentPage === 1 ? 'disabled' : ''}\`;
-  prevButton.innerHTML = "<i class='fas fa-chevron-left'></i>";
-  prevButton.disabled = currentPage === 1;
-  prevButton.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderProxyList();
-    }
-  });
-  paginationContainer.appendChild(prevButton);
+  const controls = document.createElement("div");
+  controls.className = "flex items-center gap-4";
 
-  // Menentukan jumlah tombol yang akan ditampilkan
-  const buttonCount = window.innerWidth < 640 ? 3 : 5;
-  let startPage = Math.max(1, currentPage - Math.floor(buttonCount / 2));
-  let endPage = Math.min(totalPages, startPage + buttonCount - 1);
+  // Prev Arrow
+  const prevBtn = document.createElement("button");
+  prevBtn.className = \`pagination-btn \${currentPage === 1 ? 'disabled' : ''}\`;
+  prevBtn.innerHTML = "<i class='fas fa-chevron-left'></i>";
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => { if(currentPage > 1) { currentPage--; renderProxyList(); } };
+  controls.appendChild(prevBtn);
 
-  // Menyesuaikan startPage jika tidak cukup ruang di akhir
-  if (endPage - startPage + 1 < buttonCount) {
-    startPage = Math.max(1, endPage - buttonCount + 1);
-  }
+  // Page Info
+  const pageInfo = document.createElement("span");
+  pageInfo.className = "text-gray-400 text-sm";
+  pageInfo.textContent = \`\${currentPage}/\${totalPages}\`;
+  controls.appendChild(pageInfo);
 
-  // Tombol 1 jika diperlukan
-  if (startPage > 1) {
-    const firstButton = document.createElement('button');
-    firstButton.className = 'pagination-btn';
-    firstButton.textContent = '1';
-    firstButton.addEventListener("click", () => {
-      currentPage = 1;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(firstButton);
+  // Next Arrow
+  const nextBtn = document.createElement("button");
+  nextBtn.className = \`pagination-btn \${currentPage === totalPages ? 'disabled' : ''}\`;
+  nextBtn.innerHTML = "<i class='fas fa-chevron-right'></i>";
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => { if(currentPage < totalPages) { currentPage++; renderProxyList(); } };
+  controls.appendChild(nextBtn);
 
-    // Tombol '...' jika diperlukan
-    if (startPage > 2) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'px-1 text-gray-400';
-      ellipsis.textContent = '...';
-      paginationContainer.appendChild(ellipsis);
-    }
-  }
+  paginationWrapper.appendChild(controls);
 
-  // Tombol halaman tengah
-  for (let page = startPage; page <= endPage; page++) {
-    const pageButton = document.createElement('button');
-    pageButton.className = \`pagination-btn \${page === currentPage ? 'active' : ''}\`;
-    pageButton.textContent = page;
-    pageButton.addEventListener("click", () => {
-      currentPage = page;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(pageButton);
-  }
+  const rangeInfo = document.createElement("div");
+  rangeInfo.className = "text-gray-600 text-xs";
+  const start = (currentPage - 1) * 10 + 1;
+  const end = Math.min(currentPage * 10, filteredProxyList.length);
+  rangeInfo.textContent = \`\${start}-\${end} dari \${filteredProxyList.length}\`;
+  paginationWrapper.appendChild(rangeInfo);
 
-  // Tombol '...' jika diperlukan di akhir
-  if (endPage < totalPages) {
-    if (endPage < totalPages - 1) {
-      const ellipsis = document.createElement('span');
-      ellipsis.className = 'px-1 text-gray-400';
-      ellipsis.textContent = '...';
-      paginationContainer.appendChild(ellipsis);
-    }
-
-    // Tombol halaman terakhir
-    const lastButton = document.createElement('button');
-    lastButton.className = 'pagination-btn';
-    lastButton.textContent = totalPages.toString();
-    lastButton.addEventListener("click", () => {
-      currentPage = totalPages;
-      renderProxyList();
-    });
-    paginationContainer.appendChild(lastButton);
-  }
-
-  // Tombol Next
-  const nextButton = document.createElement('button');
-  nextButton.className = \`pagination-btn \${currentPage === totalPages ? 'disabled' : ''}\`;
-  nextButton.innerHTML = "<i class='fas fa-chevron-right'></i>";
-  nextButton.disabled = currentPage === totalPages;
-  nextButton.addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderProxyList();
-    }
-  });
-  paginationContainer.appendChild(nextButton);
+  paginationContainer.appendChild(paginationWrapper);
 }
 
 async function selectProxy(proxyIndex) {
