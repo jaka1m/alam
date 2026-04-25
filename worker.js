@@ -2790,34 +2790,40 @@ serverDomainElements.forEach(element => {
       let tlsResult = '';
       let ntlsResult = '';
 
-      const name = encodeURIComponent(formData.get("name"));
+      const rawName = formData.get("name");
+      const baseName = rawName.replace(/ \[(VMess|VLESS|Trojan|SS)-(TLS|NTLS)\]$/, '');
+      const protocolLabel = formPrefix === 'vmess' ? 'VMess' : (formPrefix === 'ss' ? 'SS' : (formPrefix === 'vless' ? 'VLESS' : 'Trojan'));
+
+      const nameTLS = encodeURIComponent(baseName + " [" + protocolLabel + "-TLS]");
+      const nameNTLS = encodeURIComponent(baseName + " [" + protocolLabel + "-NTLS]");
+
       const uuid = formData.get("uuid");
       const path = encodeURIComponent(formData.get("path"));
       const password = formData.get("password");
 
       if (formPrefix === 'vmess') {
         const tlsObj = {
-          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 443, 'id': formData.get('uuid'),
+          'v': '2', 'ps': baseName + " [VMess-TLS]", 'add': domainForWildcard, 'port': 443, 'id': formData.get('uuid'),
           'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
           'tls': 'tls', 'sni': fullDomain, 'scy': "zero"
         };
         const ntlsObj = {
-          'v': '2', 'ps': formData.get("name"), 'add': domainForWildcard, 'port': 80, 'id': formData.get('uuid'),
+          'v': '2', 'ps': baseName + " [VMess-NTLS]", 'add': domainForWildcard, 'port': 80, 'id': formData.get('uuid'),
           'aid': '0', 'net': 'ws', 'type': 'none', 'host': domainWithPrefix, 'path': formData.get("path"),
           'tls': '', 'sni': '', 'scy': "zero"
         };
         tlsResult = "vmess://" + btoa(JSON.stringify(tlsObj));
         ntlsResult = "vmess://" + btoa(JSON.stringify(ntlsObj));
       } else if (formPrefix === "vless") {
-        tlsResult = \`vless://\${uuid}@\${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`vless://\${uuid}@\${domainForWildcard}:80?encryption=none&security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = `vless://${uuid}@${domainForWildcard}:443?encryption=none&security=tls&type=ws&host=${domainWithPrefix}&path=${path}&sni=${fullDomain}#${nameTLS}`;
+        ntlsResult = `vless://${uuid}@${domainForWildcard}:80?encryption=none&security=none&type=ws&host=${domainWithPrefix}&path=${path}#${nameNTLS}`;
       } else if (formPrefix === "trojan") {
-        tlsResult = \`trojan://\${password}@\${domainForWildcard}:443?security=tls&type=ws&host=\${domainWithPrefix}&path=\${path}&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`trojan://\${password}@\${domainForWildcard}:80?security=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = `trojan://${password}@${domainForWildcard}:443?security=tls&type=ws&host=${domainWithPrefix}&path=${path}&sni=${fullDomain}#${nameTLS}`;
+        ntlsResult = `trojan://${password}@${domainForWildcard}:80?security=none&type=ws&host=${domainWithPrefix}&path=${path}#${nameNTLS}`;
       } else if (formPrefix === 'ss') {
         const encodedPassword = btoa("none:" + password);
-        tlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:443?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}&security=tls&sni=\${fullDomain}#\${name}\`;
-        ntlsResult = \`ss://\${encodedPassword}@\${domainForWildcard}:80?encryption=none&type=ws&host=\${domainWithPrefix}&path=\${path}#\${name}\`;
+        tlsResult = `ss://${encodedPassword}@${domainForWildcard}:443?encryption=none&type=ws&host=${domainWithPrefix}&path=${path}&security=tls&sni=${fullDomain}#${nameTLS}`;
+        ntlsResult = `ss://${encodedPassword}@${domainForWildcard}:80?encryption=none&type=ws&host=${domainWithPrefix}&path=${path}#${nameNTLS}`;
       }
 
       document.getElementById('connection-tls').textContent = tlsResult;
